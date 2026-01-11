@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "NPS Response Details" %}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br></section>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-file-alt me-2"></i>{% trans "NPS Response Details" %}
+                        </h4>
+                        <div class="btn-group">
+                            <a href="{% url 'surveys:nps-response-list' organization_id=organization_id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-left me-1"></i>{% trans "Back to List" %}
+                            </a>
+                            <a href="{% url 'surveys:nps-response-delete' organization_id=organization_id pk=response.pk %}" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>{% trans "Delete" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Main Information -->
+        <div class="col-lg-8">
+            <!-- Response Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "Response Information" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="score-display mb-3">
+                                <div class="nps-score 
+                                    {% if response.score >= 9 %}nps-excellent
+                                    {% elif response.score >= 7 %}nps-fair
+                                    {% else %}nps-poor{% endif %}">
+                                    {{ response.score }}
+                                </div>
+                                <span class="category-tag {{ response.category }}-tag">
+                                    {{ response.get_category_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h6 class="text-muted">{% trans "Customer" %}</h6>
+                            <p class="mb-3">
+                                <i class="fas fa-user me-2"></i>
+                                {{ response.customer.email }}
+                            </p>
+                            
+                            <h6 class="text-muted">{% trans "Reason" %}</h6>
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    {{ response.reason|linebreaks|default:"No reason provided" }}
+                                </div>
+                            </div>
+                            
+                            {% if response.touchpoint %}
+                            <h6 class="text-muted">{% trans "Touchpoint" %}</h6>
+                            <p>
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                {{ response.touchpoint }}
+                            </p>
+                            {% endif %}
+                            
+                            {% if response.product %}
+                            <h6 class="text-muted">{% trans "Product" %}</h6>
+                            <p>
+                                <i class="fas fa-cube me-2"></i>
+                                {{ response.product.name }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Analysis Card -->
+            {% if response.ai_analyzed %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>{% trans "AI Analysis" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">{% trans "Sentiment Score" %}</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-3" style="height: 10px;">
+                                    <div class="progress-bar 
+                                        {% if response.sentiment_score > 0.1 %}bg-success
+                                        {% elif response.sentiment_score < -0.1 %}bg-danger
+                                        {% else %}bg-warning{% endif %}" 
+                                        style="width: {{ response.sentiment_score|add:1|floatformat:2 }}%">
+                                    </div>
+                                </div>
+                                <span class="badge 
+                                    {% if response.sentiment_score > 0.1 %}bg-success
+                                    {% elif response.sentiment_score < -0.1 %}bg-danger
+                                    {% else %}bg-warning{% endif %}">
+                                    {{ response.sentiment_score|floatformat:2 }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">{% trans "Analysis Status" %}</h6>
+                            <span class="badge 
+                                {% if response.analysis_status == 'completed' %}bg-success
+                                {% elif response.analysis_status == 'processing' %}bg-warning
+                                {% elif response.analysis_status == 'failed' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ response.get_analysis_status_display }}
+                            </span>
+                            {% if response.analysis_retry_count > 0 %}
+                            <small class="text-muted ms-2">
+                                ({% trans "Retries:" %} {{ response.analysis_retry_count }})
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if response.key_themes %}
+                    <h6 class="text-muted mt-4">{% trans "Key Themes" %}</h6>
+                    <div class="mt-2">
+                        {% for theme in response.key_themes %}
+                        <span class="badge bg-info me-1 mb-1">{{ theme }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if response.sentiment_metadata %}
+                    <h6 class="text-muted mt-4">{% trans "Detailed Analysis" %}</h6>
+                    <pre class="bg-light p-3 rounded" style="font-size: 0.8rem;">
+{{ sentiment_metadata_parsed }}
+                    </pre>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Follow-up Responses -->
+            {% if response.follow_up_question_responses %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "Follow-up Responses" %}</h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded">{{ follow_up_responses_parsed }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar Information -->
+        <div class="col-lg-4">
+            <!-- Metadata Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "Response Metadata" %}</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>{% trans "Response ID" %}</th>
+                            <td>{{ response.pk }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Created" %}</th>
+                            <td>{{ response.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Updated" %}</th>
+                            <td>{{ response.updated_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Organization" %}</th>
+                            <td>{{ response.organization.name }}</td>
+                        </tr>
+                        {% if response.product %}
+                        <tr>
+                            <th>{% trans "Product" %}</th>
+                            <td>{{ response.product.name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if response.survey_response %}
+                        <tr>
+                            <th>{% trans "Survey Response" %}</th>
+                            <td>
+                                <a href="#" class="text-decoration-none">{{ response.survey_response.pk }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if response.metadata %}
+                        <tr>
+                            <th>{% trans "Metadata" %}</th>
+                            <td>
+                                <small class="text-muted">
+                                    {{ response.metadata|length }} {% trans "items" %}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Customer's Other Responses -->
+            {% if customer_responses %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "Customer's Other Responses" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for similar in customer_responses %}
+                        <a href="{% url 'surveys:nps-response-detail' organization_id=organization_id pk=similar.pk %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge score-{{ similar.score }} me-2">
+                                        {{ similar.score }}
+                                    </span>
+                                    <small>{{ similar.reason|truncatechars:30|default:"No reason" }}</small>
+                                </div>
+                                <small class="text-muted">{{ similar.created_at|date:"M d" }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Similar Responses (Same Category) -->
+            {% if similar_responses %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "Similar Responses" %}</h5>
+                    <small class="text-muted">{% trans "Same category in this organization" %}</small>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for similar in similar_responses %}
+                        <a href="{% url 'surveys:nps-response-detail' organization_id=organization_id pk=similar.pk %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="category-tag {{ similar.category }}-tag me-2">
+                                        {{ similar.get_category_display|slice:":1" }}
+                                    </span>
+                                    <small>{{ similar.reason|truncatechars:30|default:"No reason" }}</small>
+                                </div>
+                                <small class="text-muted">{{ similar.created_at|date:"M d" }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .nps-score {
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    
+    .nps-excellent { color: #06d6a0; }
+    .nps-fair { color: #ffd166; }
+    .nps-poor { color: #ef476f; }
+    
+    .category-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .promoter-tag { 
+        background-color: rgba(6, 214, 160, 0.2); 
+        color: #06b48a; 
+        border: 1px solid rgba(6, 214, 160, 0.3);
+    }
+    
+    .passive-tag { 
+        background-color: rgba(255, 209, 102, 0.2); 
+        color: #b39136; 
+        border: 1px solid rgba(255, 209, 102, 0.3);
+    }
+    
+    .detractor-tag { 
+        background-color: rgba(239, 71, 111, 0.2); 
+        color: #d13b5d; 
+        border: 1px solid rgba(239, 71, 111, 0.3);
+    }
+    
+    .score-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-width: 30px;
+        text-align: center;
+    }
+    
+    .score-0, .score-1, .score-2, .score-3, .score-4, .score-5, .score-6 {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .score-7, .score-8 {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .score-9, .score-10 {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .nps-score {
+            font-size: 2.5rem;
+        }
+        
+        .category-tag, .score-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add copy functionality for JSON data
+    const preElements = document.querySelectorAll('pre');
+    preElements.forEach(pre => {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-sm btn-outline-secondary float-end';
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+        copyBtn.title = 'Copy to clipboard';
+        copyBtn.addEventListener('click', function() {
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.replace('btn-outline-secondary', 'btn-success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.replace('btn-success', 'btn-outline-secondary');
+                }, 2000);
+            });
+        });
+        pre.parentNode.insertBefore(copyBtn, pre);
+    });
+});
+</script>
+{% endblock %}

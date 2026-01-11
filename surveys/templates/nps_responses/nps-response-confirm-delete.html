@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Delete NPS Response" %}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br></section>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Confirm Deletion" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning border-warning">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="alert-heading">{% trans "Warning: This action cannot be undone!" %}</h5>
+                                <p class="mb-0">
+                                    {% trans "You are about to permanently delete this NPS response. This will remove all associated data including AI analysis results and follow-up responses." %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Response Details Card -->
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">{% trans "Response Details" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <div class="mb-3">
+                                        <div class="display-4 fw-bold 
+                                            {% if object.score >= 9 %}text-success
+                                            {% elif object.score >= 7 %}text-warning
+                                            {% else %}text-danger{% endif %}">
+                                            {{ object.score }}
+                                        </div>
+                                        <span class="badge 
+                                            {% if object.category == 'promoter' %}bg-success
+                                            {% elif object.category == 'passive' %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ object.get_category_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th width="30%">{% trans "Customer" %}:</th>
+                                            <td>
+                                                {% if object.customer %}
+                                                {{ object.customer.email }}
+                                                {% else %}
+                                                <span class="text-muted">{% trans "No Customer" %}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>{% trans "Organization" %}:</th>
+                                            <td>{{ object.organization.name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>{% trans "Date" %}:</th>
+                                            <td>{{ object.created_at|date:"F d, Y H:i" }}</td>
+                                        </tr>
+                                        {% if object.product %}
+                                        <tr>
+                                            <th>{% trans "Product" %}:</th>
+                                            <td>{{ object.product.name }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if object.touchpoint %}
+                                        <tr>
+                                            <th>{% trans "Touchpoint" %}:</th>
+                                            <td>{{ object.touchpoint }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if object.reason %}
+                                        <tr>
+                                            <th>{% trans "Reason" %}:</th>
+                                            <td>
+                                                <div class="border-start border-3 border-secondary ps-2 mt-1">
+                                                    <small>{{ object.reason|truncatechars:100 }}</small>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Impact Assessment -->
+                            <div class="mt-4 pt-3 border-top">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-chart-line me-2"></i>{% trans "Impact Assessment" %}
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-database text-muted me-2"></i>
+                                            <small>{% trans "This will affect NPS calculations" %}</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-chart-pie text-muted me-2"></i>
+                                            <small>{% trans "Dashboard metrics will be updated" %}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if object.ai_analyzed %}
+                                <div class="d-flex align-items-center text-info">
+                                    <i class="fas fa-robot me-2"></i>
+                                    <small>{% trans "AI analysis data will also be removed" %}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deletion Summary -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-info-circle me-2"></i>{% trans "What will be deleted" %}
+                            </h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-check-circle text-danger me-2"></i>
+                                        {% trans "NPS Response Record" %}
+                                    </span>
+                                    <span class="badge bg-danger">{% trans "Permanent" %}</span>
+                                </li>
+                                {% if object.follow_up_question_responses %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-comments text-danger me-2"></i>
+                                        {% trans "Follow-up Responses" %}
+                                    </span>
+                                    <span class="badge bg-danger">{% trans "Permanent" %}</span>
+                                </li>
+                                {% endif %}
+                                {% if object.ai_analyzed %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-brain text-danger me-2"></i>
+                                        {% trans "AI Analysis Data" %}
+                                    </span>
+                                    <span class="badge bg-danger">{% trans "Permanent" %}</span>
+                                </li>
+                                {% endif %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-chart-bar text-danger me-2"></i>
+                                        {% trans "Impact on NPS Score" %}
+                                    </span>
+                                    <span class="badge bg-warning">{% trans "Recalculated" %}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Confirmation Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Additional Confirmation -->
+                        <div class="card border-danger mb-4">
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                    <label class="form-check-label" for="confirmDelete">
+                                        <strong>{% trans "I understand this action cannot be undone" %}</strong>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirmDataLoss" required>
+                                    <label class="form-check-label" for="confirmDataLoss">
+                                        <strong>{% trans "I understand all associated data will be permanently deleted" %}</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ back_url }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>{% trans "Cancel" %}
+                                </a>
+                                <a href="{% url 'surveys:nps-response-detail' organization_id=organization_id pk=object.pk %}" 
+                                   class="btn btn-outline-primary ms-2">
+                                    <i class="fas fa-eye me-1"></i>{% trans "View Details" %}
+                                </a>
+                            </div>
+                            <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                <i class="fas fa-trash me-1"></i>{% trans "Delete Response" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-history me-1"></i>
+                        {% trans "Requested by" %} {{ request.user.get_full_name|default:request.user.username }}
+                        {% trans "on" %} {% now "F d, Y H:i" %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .border-danger {
+        border-width: 2px !important;
+    }
+    
+    .list-group-item {
+        border-color: rgba(0,0,0,0.1);
+        padding: 0.75rem 0;
+    }
+    
+    .display-4 {
+        font-size: 3.5rem;
+        line-height: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .display-4 {
+            font-size: 2.5rem;
+        }
+        
+        .btn-group {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmDeleteCheckbox = document.getElementById('confirmDelete');
+    const confirmDataLossCheckbox = document.getElementById('confirmDataLoss');
+    const deleteButton = document.getElementById('deleteButton');
+    const form = document.querySelector('form');
+    
+    // Enable/disable delete button based on checkbox state
+    function updateDeleteButton() {
+        deleteButton.disabled = !(confirmDeleteCheckbox.checked && confirmDataLossCheckbox.checked);
+    }
+    
+    confirmDeleteCheckbox.addEventListener('change', updateDeleteButton);
+    confirmDataLossCheckbox.addEventListener('change', updateDeleteButton);
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        if (!confirmDeleteCheckbox.checked || !confirmDataLossCheckbox.checked) {
+            e.preventDefault();
+            alert('{% trans "Please confirm both statements before proceeding." %}');
+            return false;
+        }
+        
+        // Final confirmation
+        if (!confirm('{% trans "Are you absolutely sure you want to delete this NPS response? This action cannot be undone." %}')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Show loading state
+        deleteButton.disabled = true;
+        deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{% trans "Deleting..." %}';
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Escape key to cancel
+        if (e.key === 'Escape') {
+            window.location.href = "{{ back_url }}";
+        }
+        // Ctrl+Enter to submit if enabled
+        if (e.ctrlKey && e.key === 'Enter' && !deleteButton.disabled) {
+            deleteButton.click();
+        }
+    });
+});
+</script>
+{% endblock %}

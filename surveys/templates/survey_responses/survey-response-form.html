@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ survey.title }} - {% trans "Customer Survey" %}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h4 mb-0">{{ survey.title }}</h1>
+            {% if survey.organization.logo %}
+            <img src="{{ survey.organization.logo.url }}" alt="{{ survey.organization.name }}" height="40">
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card-body">
+        {% if survey.description %}
+        <div class="alert alert-info">
+            <p class="mb-0">{{ survey.description }}</p>
+        </div>
+        {% endif %}
+        
+        <form method="post" id="survey-form">
+            {% csrf_token %}
+            
+            {% for field in form.hidden_fields %}
+                {{ field }}
+            {% endfor %}
+            
+            {% for field in form.visible_fields %}
+                {% if not field.name in hidden_fields %}
+                <div class="question-card">
+                    <label class="form-label {% if field.field.required %}required{% endif %}">
+                        {{ field.label }}
+                    </label>
+                    
+                    {% if field.help_text %}
+                    <div class="form-text text-muted mb-2">
+                        {{ field.help_text }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if field.errors %}
+                    <div class="alert alert-danger">
+                        {{ field.errors }}
+                    </div>
+                    {% endif %}
+                    
+                    {{ field }}
+                </div>
+                {% endif %}
+            {% endfor %}
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    {% trans "Submit Survey" %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="card-footer text-muted">
+        <small>
+            {% trans "This survey is conducted by" %} {{ survey.organization.name }}.
+            {% trans "Your responses will be kept confidential." %}
+        </small>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // NPS scale styling
+        const npsRadios = document.querySelectorAll('.nps-radio');
+        npsRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Update all NPS labels to remove active class
+                const labels = document.querySelectorAll('.nps-label');
+                labels.forEach(label => label.classList.remove('active'));
+                
+                // Add active class to selected label
+                const selectedLabel = this.nextElementSibling;
+                selectedLabel.classList.add('active');
+            });
+        });
+        
+        // Form submission handling
+        const form = document.getElementById('survey-form');
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>{% trans "Submitting..." %}';
+        });
+    });
+</script>
+{% endblock %}

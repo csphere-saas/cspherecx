@@ -1,0 +1,1306 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Survey Response Details" %} - {{ response.survey.title }}{% endblock %}
+
+{% block content %}
+<section class="py-4"><p></p><br>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'surveys:survey-response-list' organization_pk=organization_pk survey_id=survey_id %}" class="text-decoration-none">
+                            <i class="fas fa-arrow-left me-2"></i>{% trans "Back to Responses" %}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% trans "Response Details" %}
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                    <h1 class="h2 mb-1">{% trans "Survey Response" %}</h1>
+                    <p class="text-muted mb-0">{{ response.survey.title }}</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+                    <span class="badge {% if response.is_complete %}bg-success{% else %}bg-warning{% endif %} fs-6">
+                        {% if response.is_complete %}
+                            <i class="fas fa-check-circle me-1"></i>{% trans "Completed" %}
+                        {% else %}
+                            <i class="fas fa-clock me-1"></i>{% trans "Incomplete" %}
+                        {% endif %}
+                    </span>
+                    {% if response.analysis_status %}
+                    <span class="badge analysis-status-badge fs-6" data-status="{{ response.analysis_status }}">
+                        <i class="fas fa-chart-line me-1"></i>
+                        {{ response.get_analysis_status_display }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Sentiment Analysis Dashboard Card -->
+            {% if response.ai_analyzed and response.sentiment_metadata %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-muted d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        {% trans "AI Sentiment Analysis Dashboard" %}
+                    </h2>
+                    {% if response.sentiment_metadata.confidence_score %}
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        {% trans "Confidence:" %} {{ response.sentiment_metadata.confidence_score|floatformat:2 }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Overall Sentiment Score -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h3 class="h6 text-muted mb-3">{% trans "Overall Sentiment" %}</h3>
+                            <div class="d-flex align-items-center">
+                                <div class="sentiment-gauge me-4">
+                                    <div class="gauge-circle" data-score="{{ response.sentiment_score|default:0 }}">
+                                        <span class="gauge-score">{{ response.sentiment_score|default:0|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                                <div class="sentiment-details">
+                                    <h4 class="sentiment-label mb-1" data-score="{{ response.sentiment_score|default:0 }}">
+                                        {{ response.sentiment_metadata.sentiment_label|default:"Neutral"|title }}
+                                    </h4>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {% if response.sentiment_metadata.analysis_timestamp %}
+                                        {{ response.sentiment_metadata.analysis_timestamp|slice:":10" }}
+                                        {% else %}
+                                        {% trans "Not timestamped" %}
+                                        {% endif %}
+                                    </small>
+                                    {% if response.sentiment_metadata.sentiment_magnitude %}
+                                    <div class="mt-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-chart-bar me-1"></i>
+                                            {% trans "Magnitude:" %} {{ response.sentiment_metadata.sentiment_magnitude|floatformat:2 }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Urgency & Actionability -->
+                        <div class="col-md-6">
+                            <h3 class="h6 text-muted mb-3">{% trans "Priority Indicators" %}</h3>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <div class="urgency-indicator">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-exclamation-circle me-2 text-muted"></i>
+                                            <span class="small text-muted">{% trans "Urgency Level" %}</span>
+                                        </div>
+                                        {% with urgency=response.sentiment_metadata.urgency_level|default:"low" %}
+                                        <span class="badge urgency-badge" data-urgency="{{ urgency }}">
+                                            {{ urgency|title }}
+                                        </span>
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="actionability-indicator">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-bullseye me-2 text-muted"></i>
+                                            <span class="small text-muted">{% trans "Actionable Feedback" %}</span>
+                                        </div>
+                                        {% if response.sentiment_metadata.actionable_feedback %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>{% trans "Yes" %}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times me-1"></i>{% trans "No" %}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="intent-indicator">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-user-tag me-2 text-muted"></i>
+                                            <span class="small text-muted">{% trans "Primary Intent" %}</span>
+                                        </div>
+                                        <span class="badge bg-primary">
+                                            {{ response.sentiment_metadata.primary_intent|default:"general_feedback"|title }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="feedback-type-indicator">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-comment me-2 text-muted"></i>
+                                            <span class="small text-muted">{% trans "Feedback Type" %}</span>
+                                        </div>
+                                        <span class="badge bg-info">
+                                            {{ response.sentiment_metadata.feedback_type|default:"unspecified"|title }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Themes & Emotions -->
+                    <div class="row mb-4">
+                        <!-- Key Themes -->
+                        {% if response.sentiment_metadata.key_themes %}
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h3 class="h6 text-muted mb-3">{% trans "Key Themes Identified" %}</h3>
+                            <div class="theme-tags">
+                                {% for theme in response.sentiment_metadata.key_themes %}
+                                <span class="badge bg-secondary me-1 mb-2 p-2 theme-tag">
+                                    <i class="fas fa-tag me-1"></i>{{ theme }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Detected Emotions -->
+                        {% if response.sentiment_metadata.detected_emotions %}
+                        <div class="col-md-6">
+                            <h3 class="h6 text-muted mb-3">{% trans "Detected Emotions" %}</h3>
+                            <div class="emotion-tags">
+                                {% for emotion, confidence in response.sentiment_metadata.detected_emotions.items %}
+                                <div class="emotion-item mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge emotion-badge me-2" data-confidence="{{ confidence }}">
+                                            {{ emotion|title }}
+                                        </span>
+                                        <small class="text-muted">{{ confidence|floatformat:2 }}</small>
+                                    </div>
+                                    <div class="progress emotion-bar" style="height: 4px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             data-confidence="{{ confidence }}" style="width: 0%;">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Key Phrases -->
+                    {% if response.sentiment_metadata.key_phrases %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h3 class="h6 text-muted mb-3">{% trans "Key Phrases Extracted" %}</h3>
+                            <div class="key-phrases">
+                                {% for phrase in response.sentiment_metadata.key_phrases %}
+                                <div class="key-phrase-item d-inline-block me-2 mb-2">
+                                    <span class="badge bg-light text-dark p-2">
+                                        <i class="fas fa-quote-left me-1"></i>
+                                        {{ phrase }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Sentiment by Aspect -->
+                    {% if response.sentiment_metadata.sentiment_by_aspect %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h3 class="h6 text-muted mb-3">{% trans "Sentiment by Aspect" %}</h3>
+                            <div class="aspect-sentiment">
+                                {% for aspect, score in response.sentiment_metadata.sentiment_by_aspect.items %}
+                                <div class="aspect-item mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-muted small">{{ aspect|title }}</span>
+                                        <span class="badge aspect-score" data-score="{{ score }}">
+                                            {{ score|floatformat:2 }}
+                                        </span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar aspect-bar" role="progressbar" 
+                                             data-score="{{ score }}" style="width: 50%;">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Additional Metadata -->
+                    <div class="row mb-4">
+                        {% if response.sentiment_metadata.topics %}
+                        <div class="col-md-6 mb-3">
+                            <h3 class="h6 text-muted mb-3">{% trans "Topics Discussed" %}</h3>
+                            <div class="topics-container">
+                                {% for topic in response.sentiment_metadata.topics %}
+                                <span class="badge bg-dark me-1 mb-1">
+                                    {{ topic }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if response.sentiment_metadata.suggested_actions %}
+                        <div class="col-md-6 mb-3">
+                            <h3 class="h6 text-muted mb-3">{% trans "Suggested Actions" %}</h3>
+                            <div class="suggested-actions">
+                                {% for action in response.sentiment_metadata.suggested_actions %}
+                                <div class="action-item mb-2">
+                                    <span class="text-muted small">
+                                        <i class="fas fa-caret-right me-2"></i>{{ action }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Analysis Summary -->
+                    {% if response.sentiment_metadata.summary %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h3 class="h6 text-muted mb-3">{% trans "AI Analysis Summary" %}</h3>
+                            <div class="card bg-dark border-light">
+                                <div class="card-body">
+                                    <p class="mb-0 text-white analysis-summary">
+                                        {{ response.sentiment_metadata.summary }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Raw Metadata (Collapsible) -->
+                    {% if response.sentiment_metadata %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="accordion" id="rawMetadataAccordion">
+                                <div class="accordion-item bg-dark border-light">
+                                    <h2 class="accordion-header" id="headingRawMetadata">
+                                        <button class="accordion-button collapsed bg-dark text-white" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#collapseRawMetadata" 
+                                                aria-expanded="false" aria-controls="collapseRawMetadata">
+                                            <i class="fas fa-code me-2"></i>
+                                            {% trans "View Raw Sentiment Metadata" %}
+                                        </button>
+                                    </h2>
+                                    <div id="collapseRawMetadata" class="accordion-collapse collapse" 
+                                         aria-labelledby="headingRawMetadata" data-bs-parent="#rawMetadataAccordion">
+                                        <div class="accordion-body">
+                                            <pre class="text-white mb-0 json-display">
+                                                <code>{{ response.sentiment_metadata_json|default:response.sentiment_metadata }}</code>
+                                            </pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif response.analysis_status == 'processing' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-sync-alt fa-spin me-2"></i>
+                        {% trans "Analysis in Progress" %}
+                    </h2>
+                </div>
+                <div class="card-body text-center py-5">
+                    <div class="spinner-border text-warning mb-3" role="status">
+                        <span class="visually-hidden">{% trans "Loading..." %}</span>
+                    </div>
+                    <h4 class="text-muted">{% trans "Analyzing sentiment..." %}</h4>
+                    <p class="text-muted mb-0">{% trans "AI analysis is currently processing this response." %}</p>
+                    {% if response.scheduled_for_analysis %}
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-clock me-1"></i>
+                        {% trans "Scheduled for:" %} {{ response.scheduled_for_analysis|date:"M d, Y H:i" }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif response.analysis_status == 'failed' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-muted">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Analysis Failed" %}
+                    </h2>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
+                    <h4 class="text-muted">{% trans "Analysis Unavailable" %}</h4>
+                    <p class="text-muted mb-0">{% trans "Sentiment analysis failed for this response." %}</p>
+                    {% if response.analysis_retry_count > 0 %}
+                    <div class="mt-3">
+                        <small class="text-muted">{% trans "Retry attempts:" %} {{ response.analysis_retry_count }}</small>
+                    </div>
+                    {% endif %}
+                    {% if response.last_analysis_attempt %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-times me-1"></i>
+                            {% trans "Last attempt:" %} {{ response.last_analysis_attempt|date:"M d, Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif response.analysis_status == 'pending' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-muted">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-hourglass-half me-2"></i>
+                        {% trans "Analysis Pending" %}
+                    </h2>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-clock fa-3x text-secondary mb-3"></i>
+                    <h4 class="text-muted">{% trans "Awaiting Analysis" %}</h4>
+                    <p class="text-muted mb-0">{% trans "This response is queued for sentiment analysis." %}</p>
+                    {% if response.submitted_for_analysis %}
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-paper-plane me-1"></i>
+                            {% trans "Submitted for analysis:" %} {{ response.submitted_for_analysis|date:"M d, Y H:i" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Response Data Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-muted">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0">
+                            <i class="fas fa-list-check me-2"></i>
+                            {% trans "Survey Answers" %}
+                        </h2>
+                        {% if questions_with_answers %}
+                        <span class="badge bg-light text-dark">
+                            {{ questions_with_answers|length }} {% trans "Questions" %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if questions_with_answers %}
+                        <div class="response-questions">
+                            {% for item in questions_with_answers %}
+                            <div class="question-item mb-4 pb-3 border-bottom">
+                                <div class="question-header mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h3 class="h6 text-muted mb-1 flex-grow-1">
+                                            <span class="question-number me-2 text-muted">#{{ forloop.counter }}</span>
+                                            {{ item.question_text|default:"Question" }}
+                                        </h3>
+                                        <div class="d-flex flex-column align-items-end">
+                                            <small class="badge bg-light text-dark ms-2 mb-1">
+                                                {{ item.question_type|default:"text"|title }}
+                                            </small>
+                                            {% if item.question.required %}
+                                            <small class="badge bg-warning text-dark">
+                                                <i class="fas fa-asterisk me-1"></i>{% trans "Required" %}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if item.question.description %}
+                                    <p class="small text-muted mb-2 mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ item.question.description }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="answer-content">
+                                    {% if item.answer_display %}
+                                    <div class="text-answer">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <div class="answer-text" id="answer-{{ forloop.counter }}">
+                                                    {{ item.answer_display|safe|linebreaks }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% elif item.answer %}
+                                    <div class="text-answer">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <div class="answer-text" id="answer-{{ forloop.counter }}">
+                                                    {% if item.answer|length > 500 %}
+                                                    <div class="answer-truncated" id="answer-truncated-{{ forloop.counter }}">
+                                                        {{ item.answer|truncatechars:500 }}
+                                                        <a href="#" class="show-more-link ms-2" data-target="{{ forloop.counter }}">
+                                                            <i class="fas fa-chevron-down me-1"></i>{% trans "Show more" %}
+                                                        </a>
+                                                    </div>
+                                                    <div class="answer-full d-none" id="answer-full-{{ forloop.counter }}">
+                                                        {{ item.answer|linebreaks }}
+                                                        <a href="#" class="show-less-link d-inline-block mt-2" data-target="{{ forloop.counter }}">
+                                                            <i class="fas fa-chevron-up me-1"></i>{% trans "Show less" %}
+                                                        </a>
+                                                    </div>
+                                                    {% else %}
+                                                    {{ item.answer|linebreaks }}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-answer">
+                                        <div class="card bg-secondary">
+                                            <div class="card-body text-center py-3">
+                                                <span class="text-muted">
+                                                    <i class="fas fa-minus-circle me-1"></i>
+                                                    {% trans "No answer provided" %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Answer Metadata -->
+                                    <div class="answer-metadata mt-2">
+                                        {% if item.answer_metadata %}
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% if item.answer_metadata.word_count %}
+                                            <small class="text-muted">
+                                                <i class="fas fa-font me-1"></i>
+                                                {{ item.answer_metadata.word_count }} {% trans "words" %}
+                                            </small>
+                                            {% endif %}
+                                            {% if item.answer_metadata.char_count %}
+                                            <small class="text-muted">
+                                                <i class="fas fa-text-width me-1"></i>
+                                                {{ item.answer_metadata.char_count }} {% trans "chars" %}
+                                            </small>
+                                            {% endif %}
+                                            {% if item.answer_metadata.response_time %}
+                                            <small class="text-muted">
+                                                <i class="fas fa-stopwatch me-1"></i>
+                                                {{ item.answer_metadata.response_time }}s
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% elif response.response_data %}
+                        <div class="response-questions">
+                            {% for key, value in response.response_data.items %}
+                            <div class="question-item mb-4 pb-3 border-bottom">
+                                <div class="question-header mb-3">
+                                    <h3 class="h6 text-muted mb-1">
+                                        <span class="question-number me-2 text-muted">#{{ forloop.counter }}</span>
+                                        {{ key|title|truncatechars:60 }}
+                                    </h3>
+                                </div>
+                                
+                                <div class="answer-content">
+                                    <div class="text-answer">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <div class="answer-text" id="answer-{{ forloop.counter }}">
+                                                    {% if value is None or value == '' %}
+                                                    <span class="text-muted">{% trans "No answer provided" %}</span>
+                                                    {% elif value|length > 500 %}
+                                                    <div class="answer-truncated" id="answer-truncated-{{ forloop.counter }}">
+                                                        {{ value|truncatechars:500 }}
+                                                        <a href="#" class="show-more-link ms-2" data-target="{{ forloop.counter }}">
+                                                            <i class="fas fa-chevron-down me-1"></i>{% trans "Show more" %}
+                                                        </a>
+                                                    </div>
+                                                    <div class="answer-full d-none" id="answer-full-{{ forloop.counter }}">
+                                                        {{ value|linebreaks }}
+                                                        <a href="#" class="show-less-link d-inline-block mt-2" data-target="{{ forloop.counter }}">
+                                                            <i class="fas fa-chevron-up me-1"></i>{% trans "Show less" %}
+                                                        </a>
+                                                    </div>
+                                                    {% else %}
+                                                    {{ value|linebreaks }}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">{% trans "No response data" %}</h4>
+                            <p class="text-muted">{% trans "This survey response doesn't contain any answer data." %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Response Information Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-muted">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "Response Information" %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-poll me-1"></i>{% trans "Survey" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.survey.title|truncatechars:40 }}</p>
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <small class="badge bg-dark">{{ response.survey.survey_type|default:"General" }}</small>
+                                {% if response.survey.category %}
+                                <small class="badge bg-dark">{{ response.survey.category }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if response.customer %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-user me-1"></i>{% trans "Customer" %}
+                            </label>
+                            <p class="mb-0 text-muted">
+                                {{ response.customer.get_full_name|default:response.customer.email|truncatechars:30 }}
+                            </p>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-envelope me-1"></i>{{ response.customer.email|truncatechars:25 }}
+                            </small>
+                            {% if response.customer.customer_id %}
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-id-card me-1"></i>{{ response.customer.customer_id }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-user-slash me-1"></i>{% trans "Customer" %}
+                            </label>
+                            <p class="mb-0 text-muted">{% trans "Anonymous Respondent" %}</p>
+                            {% if response.respondent_id %}
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-fingerprint me-1"></i>{{ response.respondent_id|truncatechars:20 }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-calendar me-1"></i>{% trans "Response Date" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.created_at|date:"M d, Y H:i" }}</p>
+                            {% if response.started_at %}
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-play me-1"></i>
+                                {% trans "Started:" %} {{ response.started_at|date:"H:i" }}
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        {% if response.completed_at %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-check-circle me-1"></i>{% trans "Completed At" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.completed_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-language me-1"></i>{% trans "Language" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.language|upper }}</p>
+                            {% if response.locale %}
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-globe-americas me-1"></i>{{ response.locale }}
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        {% if response.device_type %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-mobile-alt me-1"></i>{% trans "Device" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.device_type|title }}</p>
+                            {% if response.user_agent %}
+                            <small class="text-muted d-block mt-1" title="{{ response.user_agent }}">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {{ response.user_agent|truncatechars:30 }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if response.channel %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-broadcast-tower me-1"></i>{% trans "Channel" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.channel.name|default:response.channel.channel_type|title }}</p>
+                            {% if response.channel.platform %}
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-desktop me-1"></i>{{ response.channel.platform|title }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if response.completion_time %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-clock me-1"></i>{% trans "Completion Time" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.completion_time }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.ip_address %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-network-wired me-1"></i>{% trans "IP Address" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.ip_address }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.session_id %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-id-badge me-1"></i>{% trans "Session ID" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.session_id|truncatechars:20 }}</p>
+                        </div>
+                        {% endif %}
+
+                        <!-- Response Metadata -->
+                        {% if response.metadata %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-tags me-1"></i>{% trans "Response Metadata" %}
+                            </label>
+                            <div class="metadata-tags mt-1">
+                                {% for key, value in response.metadata.items %}
+                                <span class="badge bg-dark me-1 mb-1" title="{{ key }}: {{ value }}">
+                                    {{ key|truncatechars:15 }}: {{ value|truncatechars:15 }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Profile Card -->
+            {% if response.customer %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        {% trans "Customer Profile" %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="customer-grid">
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-id-card me-1"></i>{% trans "Customer ID" %}
+                            </label>
+                            <p class="mb-0 text-muted customer-id">{{ response.customer.customer_id|truncatechars:20 }}</p>
+                        </div>
+
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-chart-pie me-1"></i>{% trans "Segment" %}
+                            </label>
+                            <span class="badge customer-segment" data-segment="{{ response.customer.segment }}">
+                                {{ response.customer.segment|title }}
+                            </span>
+                        </div>
+
+                        {% if response.customer.phone %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-phone me-1"></i>{% trans "Phone" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.phone }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.company %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-building me-1"></i>{% trans "Company" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.company|truncatechars:25 }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.country %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-globe me-1"></i>{% trans "Country" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.country }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.industry %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-industry me-1"></i>{% trans "Industry" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.industry }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.total_interactions %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-exchange-alt me-1"></i>{% trans "Total Interactions" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.total_interactions }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.first_interaction_date %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-calendar-plus me-1"></i>{% trans "First Interaction" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.first_interaction_date|date:"M d, Y" }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.last_interaction_date %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-calendar-check me-1"></i>{% trans "Last Interaction" %}
+                            </label>
+                            <p class="mb-0 text-muted">{{ response.customer.last_interaction_date|date:"M d, Y" }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if response.customer.metadata %}
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-semibold small text-muted mb-1 d-block">
+                                <i class="fas fa-info-circle me-1"></i>{% trans "Additional Info" %}
+                            </label>
+                            <div class="metadata-tags mt-1">
+                                {% for key, value in response.customer.metadata.items %}
+                                <span class="badge bg-light text-dark me-1 mb-1" title="{{ key }}: {{ value }}">
+                                    {{ key }}: {{ value|truncatechars:15 }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        {% trans "Actions" %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if response.ai_analyzed %}
+                        <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#reanalyzeModal">
+                            <i class="fas fa-redo me-1"></i>{% trans "Re-analyze Sentiment" %}
+                        </button>
+                        {% elif response.analysis_status != 'processing' %}
+                        <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#analyzeNowModal">
+                            <i class="fas fa-robot me-1"></i>{% trans "Analyze Sentiment Now" %}
+                        </button>
+                        {% endif %}
+                        
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>{% trans "Export Response" %}
+                        </a>
+                        
+                        <a href="#" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-print me-1"></i>{% trans "Print Summary" %}
+                        </a>
+                        
+                        
+                        
+                        <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-1"></i>{% trans "Delete Response" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- Modals -->
+<div class="modal fade" id="reanalyzeModal" tabindex="-1" aria-labelledby="reanalyzeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-muted" id="reanalyzeModalLabel">{% trans "Re-analyze Sentiment" %}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">{% trans "This will re-run the AI sentiment analysis on this response. The existing analysis data will be replaced." %}</p>
+                <p class="text-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    {% trans "This action cannot be undone." %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-warning" id="confirmReanalyze">{% trans "Re-analyze" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="analyzeNowModal" tabindex="-1" aria-labelledby="analyzeNowModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-muted" id="analyzeNowModalLabel">{% trans "Analyze Sentiment Now" %}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">{% trans "This will queue this response for immediate AI sentiment analysis." %}</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {% trans "Analysis typically takes 1-2 minutes to complete." %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success" id="confirmAnalyzeNow">{% trans "Analyze Now" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Base Styles */
+    .question-item:last-child {
+        border-bottom: none !important;
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    .answer-text {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    
+    .answer-text::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .answer-text::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .answer-text::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    
+    /* Sentiment Gauge */
+    .gauge-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+    
+    .gauge-circle::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 10px solid transparent;
+        box-sizing: border-box;
+    }
+    
+    .gauge-score {
+        z-index: 1;
+        color: white;
+        font-weight: bold;
+    }
+    
+    /* Theme Tags */
+    .theme-tags, .topics-container, .metadata-tags {
+        max-height: 150px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    
+    .theme-tag {
+        display: inline-block;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Emotion Bars */
+    .emotion-bar .progress-bar {
+        background-color: #4e73df;
+    }
+    
+    .emotion-badge {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Aspect Sentiment Bars */
+    .aspect-bar {
+        transition: width 0.5s ease;
+    }
+    
+    .json-display {
+    white-space: pre-wrap;      /* Allow wrapping */
+    word-wrap: break-word;      /* Break long words */
+    overflow-wrap: break-word;  /* Modern alternative to word-wrap */
+    word-break: break-all;      /* Break at any character if needed */
+    max-width: 100%;            /* Ensure it doesn't overflow container */
+    overflow-x: auto;           /* Add horizontal scroll if really needed */
+    background-color: #2d3748;  /* Optional: better contrast */
+    padding: 1rem;              /* Optional: add some padding */
+    border-radius: 0.375rem;    /* Optional: rounded corners */
+    }
+
+    /* Analysis Status Badges */
+    .analysis-status-badge[data-status="pending"] { background-color: #6c757d; }
+    .analysis-status-badge[data-status="processing"] { background-color: #ffc107; color: #000; }
+    .analysis-status-badge[data-status="completed"] { background-color: #198754; }
+    .analysis-status-badge[data-status="failed"] { background-color: #dc3545; }
+    
+    /* Urgency Badges */
+    .urgency-badge[data-urgency="critical"] { background-color: #dc3545; color: white; }
+    .urgency-badge[data-urgency="high"] { background-color: #fd7e14; color: white; }
+    .urgency-badge[data-urgency="medium"] { background-color: #ffc107; color: black; }
+    .urgency-badge[data-urgency="low"] { background-color: #6c757d; color: white; }
+    
+    /* Customer Segment Badges */
+    .customer-segment[data-segment="vip"] { background-color: #ffc107; color: #000; }
+    .customer-segment[data-segment="loyal"] { background-color: #198754; color: #fff; }
+    .customer-segment[data-segment="at_risk"] { background-color: #fd7e14; color: #fff; }
+    .customer-segment[data-segment="churned"] { background-color: #6c757d; color: #fff; }
+    .customer-segment[data-segment="new"] { background-color: #0dcaf0; color: #000; }
+    .customer-segment[data-segment="regular"] { background-color: #0d6efd; color: #fff; }
+    
+    /* Aspect Score Badges */
+    .aspect-score[data-score] {
+        color: white;
+        font-weight: bold;
+        min-width: 45px;
+        text-align: center;
+    }
+    
+    /* Question Number */
+    .question-number {
+        font-family: monospace;
+        font-weight: bold;
+    }
+    
+    /* Show More/Less Links */
+    .show-more-link, .show-less-link {
+        color: #0dcaf0;
+        text-decoration: none;
+        font-size: 0.875rem;
+    }
+    
+    .show-more-link:hover, .show-less-link:hover {
+        text-decoration: underline;
+        color: #0dcaf0;
+    }
+    
+    /* Raw Metadata */
+    pre code {
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .breadcrumb {
+            font-size: 0.875rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .info-item {
+            margin-bottom: 1rem;
+        }
+        
+        .gauge-circle {
+            width: 80px;
+            height: 80px;
+            font-size: 1.2rem;
+        }
+        
+        .sentiment-details {
+            margin-left: 1rem;
+        }
+        
+        .theme-tag {
+            max-width: 150px;
+        }
+        
+        .answer-text {
+            max-height: 300px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .d-flex.justify-content-between.align-items-start {
+            flex-direction: column;
+        }
+        
+        .gap-2 {
+            margin-top: 0.5rem;
+        }
+        
+        .gauge-circle {
+            width: 60px;
+            height: 60px;
+            font-size: 1rem;
+        }
+        
+        .answer-text {
+            max-height: 200px;
+        }
+        
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sentiment Gauge Styling
+        const gaugeCircles = document.querySelectorAll('.gauge-circle');
+        gaugeCircles.forEach(gauge => {
+            const score = parseFloat(gauge.getAttribute('data-score'));
+            
+            // Calculate color based on score (-1 to 1)
+            let hue = 120; // Green for positive
+            if (score < 0) {
+                hue = 0; // Red for negative
+            } else if (score === 0) {
+                hue = 60; // Yellow for neutral
+            }
+            
+            // Adjust saturation based on score magnitude
+            const saturation = Math.min(100, Math.abs(score) * 100);
+            const lightness = 40;
+            
+            gauge.style.background = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        });
+        
+        // Sentiment Label Styling
+        const sentimentLabels = document.querySelectorAll('.sentiment-label');
+        sentimentLabels.forEach(label => {
+            const score = parseFloat(label.getAttribute('data-score'));
+            if (score > 0.3) {
+                label.classList.add('text-success');
+            } else if (score < -0.3) {
+                label.classList.add('text-danger');
+            } else {
+                label.classList.add('text-warning');
+            }
+        });
+        
+        // Aspect Bar Styling and Width Calculation
+        const aspectBars = document.querySelectorAll('.aspect-bar');
+        aspectBars.forEach(bar => {
+            const score = parseFloat(bar.getAttribute('data-score'));
+            const percentage = ((score + 1) / 2) * 100;
+            
+            bar.style.width = percentage + '%';
+            
+            if (score > 0.3) {
+                bar.classList.add('bg-success');
+            } else if (score < -0.3) {
+                bar.classList.add('bg-danger');
+            } else {
+                bar.classList.add('bg-warning');
+            }
+        });
+        
+        // Aspect Score Badge Styling
+        const aspectScores = document.querySelectorAll('.aspect-score');
+        aspectScores.forEach(badge => {
+            const score = parseFloat(badge.getAttribute('data-score'));
+            if (score > 0.3) {
+                badge.classList.add('bg-success');
+            } else if (score < -0.3) {
+                badge.classList.add('bg-danger');
+            } else {
+                badge.classList.add('bg-warning');
+            }
+        });
+        
+        // Emotion Badge Confidence Styling
+        const emotionBadges = document.querySelectorAll('.emotion-badge');
+        emotionBadges.forEach(badge => {
+            const confidence = parseFloat(badge.getAttribute('data-confidence'));
+            if (confidence > 0.7) {
+                badge.classList.add('bg-success');
+            } else if (confidence > 0.4) {
+                badge.classList.add('bg-warning');
+            } else {
+                badge.classList.add('bg-secondary');
+            }
+        });
+        
+        // Emotion Bar Width Calculation (removed multiply filter dependency)
+        const emotionBars = document.querySelectorAll('.emotion-bar .progress-bar');
+        emotionBars.forEach(bar => {
+            const confidence = parseFloat(bar.getAttribute('data-confidence'));
+            const percentage = confidence * 100;
+            bar.style.width = percentage + '%';
+            
+            // Color coding based on confidence
+            if (confidence > 0.7) {
+                bar.style.backgroundColor = '#198754'; // Success green
+            } else if (confidence > 0.4) {
+                bar.style.backgroundColor = '#ffc107'; // Warning yellow
+            } else {
+                bar.style.backgroundColor = '#6c757d'; // Secondary gray
+            }
+        });
+        
+        // Show More/Less for Long Answers
+        const showMoreLinks = document.querySelectorAll('.show-more-link');
+        showMoreLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                const truncated = document.getElementById(`answer-truncated-${targetId}`);
+                const full = document.getElementById(`answer-full-${targetId}`);
+                
+                if (truncated) truncated.classList.add('d-none');
+                if (full) full.classList.remove('d-none');
+            });
+        });
+        
+        const showLessLinks = document.querySelectorAll('.show-less-link');
+        showLessLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                const truncated = document.getElementById(`answer-truncated-${targetId}`);
+                const full = document.getElementById(`answer-full-${targetId}`);
+                
+                if (full) full.classList.add('d-none');
+                if (truncated) truncated.classList.remove('d-none');
+            });
+        });
+        
+        // Format Customer Segment Display
+        const segmentBadges = document.querySelectorAll('.customer-segment');
+        segmentBadges.forEach(badge => {
+            const segment = badge.getAttribute('data-segment');
+            const displayNames = {
+                'vip': '{% trans "VIP" %}',
+                'loyal': '{% trans "Loyal" %}',
+                'regular': '{% trans "Regular" %}',
+                'new': '{% trans "New" %}',
+                'at_risk': '{% trans "At Risk" %}',
+                'churned': '{% trans "Churned" %}'
+            };
+            badge.textContent = displayNames[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+        });
+        
+        // Action buttons functionality
+        const confirmReanalyzeBtn = document.getElementById('confirmReanalyze');
+        if (confirmReanalyzeBtn) {
+            confirmReanalyzeBtn.addEventListener('click', function() {
+                // Implement reanalyze logic here
+                alert('Re-analyze functionality would be implemented here');
+                $('#reanalyzeModal').modal('hide');
+            });
+        }
+        
+        const confirmAnalyzeNowBtn = document.getElementById('confirmAnalyzeNow');
+        if (confirmAnalyzeNowBtn) {
+            confirmAnalyzeNowBtn.addEventListener('click', function() {
+                // Implement analyze now logic here
+                alert('Analyze now functionality would be implemented here');
+                $('#analyzeNowModal').modal('hide');
+            });
+        }
+    });
+</script>
+{% endblock %}

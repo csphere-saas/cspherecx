@@ -1,0 +1,903 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Survey Responses" %}{% endblock %}
+
+{% block content %}
+<section class="py-4"><p></p><br>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'surveys:survey-list' organization_pk=organization_pk %}" class="text-decoration-none">
+                            <i class="fas fa-arrow-left me-2"></i>{% trans "Back to Surveys" %}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% trans "Survey Responses" %}
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                    <h1 class="h2 mb-1">{% trans "Survey Responses" %}</h1>
+                    {% if survey %}
+                    <p class="text-muted mb-0">{{ survey.title }}</p>
+                    <small class="text-muted">{{ survey.get_survey_type_display }}</small>
+                    {% endif %}
+                </div>
+                
+                <!-- Export Button -->
+                <div class="dropdown mt-2 mt-md-0">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download me-2"></i>
+                        {% trans "Export" %}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="#" id="export-csv">
+                                <i class="fas fa-file-csv me-2"></i>{% trans "CSV" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="export-excel">
+                                <i class="fas fa-file-excel me-2"></i>{% trans "Excel" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-muted">
+            <h2 class="h6 mb-0">
+                <i class="fas fa-filter me-2"></i>
+                {% trans "Filters" %}
+            </h2>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filter-form">
+                <div class="row g-3">
+                    <!-- Time Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small text-white mb-1">{% trans "Time Period" %}</label>
+                        <select class="form-select form-select-sm" name="time_filter" id="time-filter">
+                            {% for filter_option in time_filters %}
+                            <option value="{{ filter_option.value }}" 
+                                    {% if time_filter == filter_option.value %}selected{% endif %}>
+                                {{ filter_option.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Sentiment Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small text-white mb-1">{% trans "Sentiment" %}</label>
+                        <select class="form-select form-select-sm" name="sentiment_filter" id="sentiment-filter">
+                            {% for filter_option in sentiment_filters %}
+                            <option value="{{ filter_option.value }}" 
+                                    {% if sentiment_filter == filter_option.value %}selected{% endif %}>
+                                {{ filter_option.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small text-white mb-1">{% trans "Status" %}</label>
+                        <select class="form-select form-select-sm" name="status_filter" id="status-filter">
+                            {% for filter_option in status_filters %}
+                            <option value="{{ filter_option.value }}" 
+                                    {% if status_filter == filter_option.value %}selected{% endif %}>
+                                {{ filter_option.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Device Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small text-white mb-1">{% trans "Device" %}</label>
+                        <select class="form-select form-select-sm" name="device_filter" id="device-filter">
+                            {% for filter_option in device_filters %}
+                            <option value="{{ filter_option.value }}" 
+                                    {% if device_filter == filter_option.value %}selected{% endif %}>
+                                {{ filter_option.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12 d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search me-1"></i>{% trans "Apply Filters" %}
+                        </button>
+                        <a href="{% url 'surveys:survey-response-list' organization_pk=organization_pk survey_id=survey_id %}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-times me-1"></i>{% trans "Clear Filters" %}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <!-- Total Responses -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 small">{% trans "Total Responses" %}</h6>
+                            <h3 class="mb-0">{{ total_responses }}</h3>
+                        </div>
+                        <i class="fas fa-reply fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Completed Responses -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 small">{% trans "Completed" %}</h6>
+                            <h3 class="mb-0">{{ completed_responses }}</h3>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Average Sentiment -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 small">{% trans "Avg. Sentiment" %}</h6>
+                            <h3 class="mb-0">
+                                {% if avg_sentiment == 0 %}
+                                    0.00
+                                {% else %}
+                                    {{ avg_sentiment }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-2">
+                        {% if avg_sentiment > 0.1 %}
+                        <span class="badge bg-success">{% trans "Positive" %}</span>
+                        {% elif avg_sentiment < -0.1 %}
+                        <span class="badge bg-danger">{% trans "Negative" %}</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">{% trans "Neutral" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Analysis -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 small">{% trans "Pending Analysis" %}</h6>
+                            <h3 class="mb-0">{{ pending_analysis }}</h3>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Positive Responses -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 small">{% trans "Positive" %}</h6>
+                            <h3 class="mb-0">{{ positive_responses }}</h3>
+                        </div>
+                        <i class="fas fa-smile fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-2">
+                        {% if total_responses > 0 %}
+                        <span class="badge bg-light text-dark">
+                            {{ positive_responses|floatformat:0 }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Negative Responses -->
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0 small">{% trans "Negative" %}</h6>
+                            <h3 class="mb-0">{{ negative_responses }}</h3>
+                        </div>
+                        <i class="fas fa-frown fa-2x opacity-50"></i>
+                    </div>
+                    <div class="mt-2">
+                        {% if total_responses > 0 %}
+                        <span class="badge bg-light text-dark">
+                            {{ negative_responses|floatformat:0 }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Responses Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center flex-wrap">
+            <h2 class="h5 mb-0">
+                <i class="fas fa-list me-2"></i>
+                {% trans "Responses" %}
+                <span class="badge bg-light text-dark ms-2">{{ total_responses }}</span>
+            </h2>
+            <div class="d-flex align-items-center mt-2 mt-md-0">
+                <span class="badge bg-light text-dark me-3">
+                    {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
+                </span>
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cog me-1"></i>
+                        {% trans "Options" %}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <button class="dropdown-item" type="button" id="analyze-all-btn">
+                                <i class="fas fa-robot me-2"></i>{% trans "Analyze All Pending" %}
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button class="dropdown-item" type="button" id="refresh-btn">
+                                <i class="fas fa-sync-alt me-2"></i>{% trans "Refresh" %}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if responses %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="responses-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">{% trans "Customer" %}</th>
+                            <th>{% trans "Response Date" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Sentiment" %}</th>
+                            <th>{% trans "Analysis" %}</th>
+                            <th class="pe-3 text-end">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in responses %}
+                        <tr>
+                            <!-- Customer Column -->
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                            {% if response.customer %}
+                                            <span class="text-dark fw-bold">
+                                                {{ response.customer.get_full_name|first|default:"A" }}
+                                            </span>
+                                            {% else %}
+                                            <i class="fas fa-user text-muted"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <strong class="d-block text-muted">
+                                            {% if response.customer %}
+                                                {{ response.customer.get_full_name|default:"Anonymous"|truncatechars:20 }}
+                                            {% else %}
+                                                {% trans "Anonymous" %}
+                                            {% endif %}
+                                        </strong>
+                                        <small class="text-muted d-block">
+                                            {% if response.customer and response.customer.email %}
+                                            {{ response.customer.email|truncatechars:25 }}
+                                            {% else %}
+                                            <span class="text-muted">{% trans "No email" %}</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Response Date Column -->
+                            <td>
+                                <div class="text-muted">
+                                    {{ response.created_at|date:"M j, Y" }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ response.created_at|time:"g:i A" }}
+                                </small>
+                            </td>
+                            
+                            <!-- Status Column -->
+                            <td>
+                                {% if response.is_complete %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>{% trans "Completed" %}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>{% trans "Incomplete" %}
+                                </span>
+                                {% endif %}
+                                
+                                {% if response.device_type %}
+                                <small class="d-block mt-1 text-white">
+                                    <i class="fas fa-{{ response.device_type }} me-1"></i>
+                                    {{ response.get_device_type_display }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Sentiment Column -->
+                            <td>
+                                {% if response.sentiment_score is not None %}
+                                <div class="sentiment-indicator">
+                                    <div class="d-flex align-items-center">
+                                        <div class="sentiment-bar me-2" data-score="{{ response.sentiment_score }}">
+                                            <div class="sentiment-fill"></div>
+                                        </div>
+                                        <div>
+                                            <span class="sentiment-value fw-bold" data-score="{{ response.sentiment_score }}">
+                                                {{ response.sentiment_score|floatformat:2 }}
+                                            </span>
+                                            <div class="sentiment-label small" data-score="{{ response.sentiment_score }}">
+                                                <!-- Filled by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-question me-1"></i>{% trans "Not analyzed" %}
+                                </span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Analysis Status Column -->
+                            <td>
+                                {% if response.ai_analyzed %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-robot me-1"></i>{% trans "Analyzed" %}
+                                </span>
+                                {% elif response.analysis_status == 'processing' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-sync-alt fa-spin me-1"></i>{% trans "Processing" %}
+                                </span>
+                                {% elif response.analysis_status == 'failed' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{% trans "Failed" %}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-clock me-1"></i>{% trans "Pending" %}
+                                </span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Actions Column -->
+                            <td class="pe-3 text-end">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'surveys:survey-response-detail' organization_pk=organization_pk survey_id=survey_id pk=response.pk %}" 
+                                       class="btn btn-outline-primary" 
+                                       title="{% trans 'View Details' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if response.has_text_responses and not response.ai_analyzed and response.is_complete %}
+                                    <button type="button" 
+                                            class="btn btn-outline-warning analyze-btn" 
+                                            data-response-id="{{ response.id }}"
+                                            title="{% trans 'Analyze Sentiment' %}">
+                                        <i class="fas fa-robot"></i>
+                                    </button>
+                                    {% endif %}
+                                    
+                                    {% if response.ai_analyzed and response.sentiment_score < -0.3 %}
+                                    <button type="button" 
+                                            class="btn btn-outline-danger followup-btn" 
+                                            data-response-id="{{ response.id }}"
+                                            title="{% trans 'Needs Follow-up' %}">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer border-top-0">
+                <nav aria-label="{% trans 'Response navigation' %}">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page={{ page_obj.previous_page_number }}{% if request.GET.time_filter %}&time_filter={{ request.GET.time_filter }}{% endif %}{% if request.GET.sentiment_filter %}&sentiment_filter={{ request.GET.sentiment_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.device_filter %}&device_filter={{ request.GET.device_filter }}{% endif %}">
+                                <i class="fas fa-chevron-left"></i>
+                                {% trans "Previous" %}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-chevron-left"></i>
+                                {% trans "Previous" %}
+                            </span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" 
+                               href="?page={{ num }}{% if request.GET.time_filter %}&time_filter={{ request.GET.time_filter }}{% endif %}{% if request.GET.sentiment_filter %}&sentiment_filter={{ request.GET.sentiment_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.device_filter %}&device_filter={{ request.GET.device_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page={{ num }}{% if request.GET.time_filter %}&time_filter={{ request.GET.time_filter }}{% endif %}{% if request.GET.sentiment_filter %}&sentiment_filter={{ request.GET.sentiment_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.device_filter %}&device_filter={{ request.GET.device_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page={{ page_obj.next_page_number }}{% if request.GET.time_filter %}&time_filter={{ request.GET.time_filter }}{% endif %}{% if request.GET.sentiment_filter %}&sentiment_filter={{ request.GET.sentiment_filter }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.device_filter %}&device_filter={{ request.GET.device_filter }}{% endif %}">
+                                {% trans "Next" %}
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                {% trans "Next" %}
+                                <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-inbox fa-4x text-white opacity-50"></i>
+                </div>
+                <h3 class="text-white mb-3">{% trans "No responses found" %}</h3>
+                <p class="text-white mb-4">
+                    {% trans "No survey responses match your current filters." %}
+                </p>
+                <a href="{% url 'surveys:survey-response-list' organization_pk=organization_pk survey_id=survey_id %}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-times me-2"></i>
+                    {% trans "Clear Filters" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-sm {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+        background-color: #6c757d !important;
+    }
+    
+    .sentiment-bar {
+        width: 80px;
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .sentiment-fill {
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        transition: width 0.3s ease;
+    }
+    
+    .sentiment-value {
+        font-size: 0.9rem;
+    }
+    
+    .sentiment-label {
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+    
+    .table > :not(caption) > * > * {
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+    }
+    
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .form-select-sm {
+        font-size: 0.875rem;
+        padding: 0.25rem 2rem 0.25rem 0.5rem;
+    }
+    
+    .form-label.small {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    @media (max-width: 768px) {
+        .d-flex.justify-content-between.align-items-start.flex-wrap {
+            flex-direction: column;
+        }
+        
+        .card-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .card-header .badge {
+            margin-top: 0.5rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+        
+        .sentiment-bar {
+            width: 60px;
+        }
+        
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+        
+        .col-xl-2, .col-md-4, .col-sm-6 {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .card-header h2 {
+            font-size: 1rem;
+        }
+        
+        .btn-group-sm > .btn {
+            padding: 0.2rem 0.4rem;
+        }
+        
+        .table > :not(caption) > * > * {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .form-select-sm {
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sentiment Bar Styling
+        const sentimentBars = document.querySelectorAll('.sentiment-bar');
+        sentimentBars.forEach(bar => {
+            const score = parseFloat(bar.getAttribute('data-score'));
+            const fill = bar.querySelector('.sentiment-fill');
+            
+            // Calculate percentage (-1 to 1 becomes 0 to 100)
+            const percentage = ((score + 1) / 2) * 100;
+            fill.style.width = percentage + '%';
+            
+            // Set color based on sentiment
+            if (score > 0.3) {
+                fill.style.backgroundColor = '#198754'; // Green
+            } else if (score < -0.3) {
+                fill.style.backgroundColor = '#dc3545'; // Red
+            } else {
+                fill.style.backgroundColor = '#ffc107'; // Yellow
+            }
+        });
+        
+        // Sentiment Value Styling
+        const sentimentValues = document.querySelectorAll('.sentiment-value');
+        sentimentValues.forEach(value => {
+            const score = parseFloat(value.getAttribute('data-score'));
+            if (score > 0.3) {
+                value.classList.add('text-success');
+            } else if (score < -0.3) {
+                value.classList.add('text-danger');
+            } else {
+                value.classList.add('text-warning');
+            }
+        });
+        
+        // Sentiment Label Text
+        const sentimentLabels = document.querySelectorAll('.sentiment-label');
+        sentimentLabels.forEach(label => {
+            const score = parseFloat(label.getAttribute('data-score'));
+            let sentimentText = '';
+            
+            if (score > 0.3) {
+                sentimentText = '{% trans "Positive" %}';
+            } else if (score > 0.1) {
+                sentimentText = '{% trans "Slightly Positive" %}';
+            } else if (score < -0.3) {
+                sentimentText = '{% trans "Negative" %}';
+            } else if (score < -0.1) {
+                sentimentText = '{% trans "Slightly Negative" %}';
+            } else {
+                sentimentText = '{% trans "Neutral" %}';
+            }
+            
+            label.textContent = sentimentText;
+        });
+        
+        // Analyze Button Click Handler
+        const analyzeButtons = document.querySelectorAll('.analyze-btn');
+        analyzeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const responseId = this.getAttribute('data-response-id');
+                analyzeResponse(responseId, this);
+            });
+        });
+        
+        // Follow-up Button Click Handler
+        const followupButtons = document.querySelectorAll('.followup-btn');
+        followupButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const responseId = this.getAttribute('data-response-id');
+                createFollowup(responseId);
+            });
+        });
+        
+        // Analyze All Pending Button
+        const analyzeAllBtn = document.getElementById('analyze-all-btn');
+        if (analyzeAllBtn) {
+            analyzeAllBtn.addEventListener('click', function() {
+                if (confirm('{% trans "Are you sure you want to analyze all pending responses? This may take some time." %}')) {
+                    analyzeAllPending();
+                }
+            });
+        }
+        
+        // Refresh Button
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                location.reload();
+            });
+        }
+        
+        // Export Buttons
+        document.getElementById('export-csv')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            exportData('csv');
+        });
+        
+        document.getElementById('export-excel')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            exportData('excel');
+        });
+        
+        // Helper Functions
+        function analyzeResponse(responseId, button) {
+            // Show loading state
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            // Make API call to analyze sentiment
+            fetch(`/api/survey-responses/${responseId}/analyze/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message and reload after delay
+                    showToast('{% trans "Success" %}', '{% trans "Sentiment analysis completed successfully." %}', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast('{% trans "Error" %}', '{% trans "Failed to analyze sentiment. Please try again." %}', 'error');
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('{% trans "Error" %}', '{% trans "An error occurred. Please try again." %}', 'error');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            });
+        }
+        
+        function createFollowup(responseId) {
+            fetch(`/api/survey-responses/${responseId}/followup/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('{% trans "Success" %}', '{% trans "Follow-up task created successfully." %}', 'success');
+                } else {
+                    showToast('{% trans "Error" %}', data.error || '{% trans "Failed to create follow-up task." %}', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('{% trans "Error" %}', '{% trans "An error occurred. Please try again." %}', 'error');
+            });
+        }
+        
+        function analyzeAllPending() {
+            fetch('/api/survey-responses/analyze-all-pending/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('{% trans "Success" %}', '{% trans "Analysis started for all pending responses." %}', 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showToast('{% trans "Error" %}', data.error || '{% trans "Failed to start analysis." %}', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('{% trans "Error" %}', '{% trans "An error occurred. Please try again." %}', 'error');
+            });
+        }
+        
+        function exportData(format) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('export', format);
+            
+            window.location.href = `{% url 'surveys:survey-response-list' organization_pk=organization_pk survey_id=survey_id %}?${params.toString()}`;
+        }
+        
+        function showToast(title, message, type) {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}:</strong> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            // Add to page
+            document.body.appendChild(toast);
+            
+            // Initialize and show toast
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove after hiding
+            toast.addEventListener('hidden.bs.toast', function() {
+                document.body.removeChild(toast);
+            });
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Auto-submit form when filter changes
+        const filterForm = document.getElementById('filter-form');
+        const filterSelects = filterForm.querySelectorAll('select');
+        
+        filterSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        });
+    });
+</script>
+{% endblock %}

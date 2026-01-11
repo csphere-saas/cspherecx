@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}CSAT Responses - {{ organization.name }}{% endblock %}
+<head>
+    <style>
+        .badge-satisfaction {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.badge-very-satisfied {
+    background-color: #1cc88a;
+    color: white;
+}
+
+.badge-satisfied {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-neutral {
+    background-color: #f6c23e;
+    color: #333;
+}
+
+.badge-dissatisfied {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.badge-very-dissatisfied {
+    background-color: #e74a3b;
+    color: white;
+}
+
+.badge-lg {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+    </style>
+</head>
+{% block content %}
+<section class="py-3"><p></p><br></section>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-list text-primary"></i> CSAT Responses
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <!-- FIXED: Use correct namespace and name -->
+        <a href="{% url 'surveys:csat-response-dashboard' organization.id %}" class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <a href="#" class="btn btn-sm btn-success">
+            <i class="fas fa-plus"></i> Add Response
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-box mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Satisfaction Level</label>
+            <select name="satisfaction_level" class="form-select form-select-sm">
+                <option value="">All Levels</option>
+                <option value="very_satisfied" {% if filter_params.satisfaction_level == 'very_satisfied' %}selected{% endif %}>Very Satisfied</option>
+                <option value="satisfied" {% if filter_params.satisfaction_level == 'satisfied' %}selected{% endif %}>Satisfied</option>
+                <option value="neutral" {% if filter_params.satisfaction_level == 'neutral' %}selected{% endif %}>Neutral</option>
+                <option value="dissatisfied" {% if filter_params.satisfaction_level == 'dissatisfied' %}selected{% endif %}>Dissatisfied</option>
+                <option value="very_dissatisfied" {% if filter_params.satisfaction_level == 'very_dissatisfied' %}selected{% endif %}>Very Dissatisfied</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label">Interaction Type</label>
+            <select name="interaction_type" class="form-select form-select-sm">
+                <option value="">All Types</option>
+                <option value="purchase" {% if filter_params.interaction_type == 'purchase' %}selected{% endif %}>Purchase</option>
+                <option value="support" {% if filter_params.interaction_type == 'support' %}selected{% endif %}>Support</option>
+                <option value="delivery" {% if filter_params.interaction_type == 'delivery' %}selected{% endif %}>Delivery</option>
+                <option value="product_use" {% if filter_params.interaction_type == 'product_use' %}selected{% endif %}>Product Use</option>
+                <option value="overall" {% if filter_params.interaction_type == 'overall' %}selected{% endif %}>Overall Experience</option>
+                <option value="other" {% if filter_params.interaction_type == 'other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">Date From</label>
+            <input type="date" name="date_from" class="form-control form-control-sm" 
+                   value="{{ filter_params.date_from }}">
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">Date To</label>
+            <input type="date" name="date_to" class="form-control form-control-sm" 
+                   value="{{ filter_params.date_to }}">
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control form-control-sm" 
+                   placeholder="Search..." value="{{ filter_params.search }}">
+        </div>
+        
+        <div class="col-md-12 mt-3">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <!-- FIXED: Use correct namespace and name -->
+            <a href="{% url 'surveys:csat-response-list' organization.id %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-times"></i> Clear Filters
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Average Score
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ avg_score|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Responses
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ total_responses }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Positive Responses
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ positive_count }}
+                            {% if total_responses > 0 %}
+                            ({% widthratio positive_count total_responses 100 %}%)
+                            {% else %}
+                            (0%)
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-thumbs-up fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Responses Table -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-table"></i> Responses ({{ page_obj.paginator.count }} total)
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Score</th>
+                        <th>Satisfaction</th>
+                        <th>Interaction</th>
+                        <th>Feedback</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for response in csat_responses %}
+                    <tr>
+                        <td>{{ response.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <small>{{ response.customer.email|truncatechars:20 }}</small>
+                        </td>
+                        <td>
+                            <span class="badge {% if response.normalized_score >= 80 %}bg-success{% elif response.normalized_score >= 60 %}bg-primary{% elif response.normalized_score >= 40 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ response.score }}/{{ response.scale_max }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if response.satisfaction_level == 'very_satisfied' %}
+                            <span class="badge badge-very-satisfied">{{ response.get_satisfaction_level_display }}</span>
+                            {% elif response.satisfaction_level == 'satisfied' %}
+                            <span class="badge badge-satisfied">{{ response.get_satisfaction_level_display }}</span>
+                            {% elif response.satisfaction_level == 'neutral' %}
+                            <span class="badge badge-neutral">{{ response.get_satisfaction_level_display }}</span>
+                            {% elif response.satisfaction_level == 'dissatisfied' %}
+                            <span class="badge badge-dissatisfied">{{ response.get_satisfaction_level_display }}</span>
+                            {% elif response.satisfaction_level == 'very_dissatisfied' %}
+                            <span class="badge badge-very-dissatisfied">{{ response.get_satisfaction_level_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ response.get_interaction_type_display|default:"N/A" }}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ response.feedback_comment|truncatechars:50|default:"No comment" }}
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <!-- FIXED: Use correct namespace and name -->
+                                <a href="{% url 'surveys:csat-response-detail' organization.id response.id %}" 
+                                   class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <!-- FIXED: Use correct namespace and name -->
+                                <a href="{% url 'surveys:csat-response-delete' organization.id response.id %}" 
+                                   class="btn btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No CSAT responses found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        Previous
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        Next
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        Last
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="card mt-4">
+    <div class="card-body text-center">
+        <h6 class="card-title mb-3">Export Data</h6>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary">
+                <i class="fas fa-file-excel"></i> Export to Excel
+            </button>
+            <button type="button" class="btn btn-outline-secondary">
+                <i class="fas fa-file-csv"></i> Export to CSV
+            </button>
+            <button type="button" class="btn btn-outline-info">
+                <i class="fas fa-file-pdf"></i> Export to PDF
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

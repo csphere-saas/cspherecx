@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        {% blocktrans with org_name=organization.name %}Edit Survey - {{ org_name }}{% endblocktrans %}
+    {% else %}
+        {% blocktrans with org_name=organization.name %}Create Survey - {{ org_name }}{% endblocktrans %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="card-header bg-{% if form.instance.pk %}warning{% else %}success{% endif %} text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="bi bi-{% if form.instance.pk %}pencil{% else %}plus{% endif %}-circle me-2"></i>
+                            {% if form.instance.pk %}
+                                {% trans "Edit Survey" %}
+                            {% else %}
+                                {% trans "Create New Survey" %}
+                            {% endif %}
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="row">
+                                <!-- Basic Information -->
+                                <div class="col-md-12 mb-4">
+                                    <h5 class="border-bottom pb-2">{% trans "Basic Information" %}</h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                                <i class="bi bi-type me-1"></i>{{ form.title.label }} *
+                                            </label>
+                                            <input type="text" 
+                                                   name="{{ form.title.name }}" 
+                                                   id="{{ form.title.id_for_label }}" 
+                                                   class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                                                   value="{{ form.title.value|default:'' }}"
+                                                   placeholder="{% trans 'Enter survey title' %}"
+                                                   required>
+                                            {% if form.title.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.title.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <label for="{{ form.survey_type.id_for_label }}" class="form-label">
+                                                <i class="bi bi-tag me-1"></i>{{ form.survey_type.label }} *
+                                            </label>
+                                            <select name="{{ form.survey_type.name }}" 
+                                                    id="{{ form.survey_type.id_for_label }}" 
+                                                    class="form-select {% if form.survey_type.errors %}is-invalid{% endif %}" 
+                                                    required>
+                                                {% for value, label in form.survey_type.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}" {% if form.survey_type.value == value %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                            {% if form.survey_type.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.survey_type.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                                            <i class="bi bi-text-paragraph me-1"></i>{{ form.description.label }}
+                                        </label>
+                                        <textarea name="{{ form.description.name }}" 
+                                                  id="{{ form.description.id_for_label }}" 
+                                                  class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
+                                                  rows="3"
+                                                  placeholder="{% trans 'Enter survey description' %}">{{ form.description.value|default:'' }}</textarea>
+                                        {% if form.description.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.description.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Survey Questions -->
+                                <div class="col-md-12 mb-4">
+                                    <h5 class="border-bottom pb-2">{% trans "Survey Questions" %}</h5>
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        {% trans "Enter questions in JSON format. Example:" %}
+                                        <pre class="mt-2 mb-0">[
+  {
+    "type": "nps",
+    "text": "How likely are you to recommend us to a friend?",
+    "required": true
+  },
+  {
+    "type": "text", 
+    "text": "What could we do to improve?",
+    "required": false
+  }
+]</pre>
+                                    </div>
+                                    
+                                    <label for="{{ form.questions.id_for_label }}" class="form-label">
+                                        <i class="bi bi-question-circle me-1"></i>{{ form.questions.label }}
+                                    </label>
+                                    <textarea name="{{ form.questions.name }}" 
+                                              id="{{ form.questions.id_for_label }}" 
+                                              class="form-control {% if form.questions.errors %}is-invalid{% endif %}" 
+                                              rows="8"
+                                              placeholder="{% trans 'Enter questions in JSON format' %}">{{ form.questions.value|default:'' }}</textarea>
+                                    {% if form.questions.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.questions.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{% trans "Supported question types: nps, csat, ces, text, rating, multiple_choice, yes_no" %}</div>
+                                </div>
+
+                                <!-- Distribution Settings -->
+                                <div class="col-md-6 mb-4">
+                                    <h5 class="border-bottom pb-2">{% trans "Distribution Settings" %}</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.trigger_event.id_for_label }}" class="form-label">
+                                            <i class="bi bi-clock me-1"></i>{{ form.trigger_event.label }}
+                                        </label>
+                                        <select name="{{ form.trigger_event.name }}" 
+                                                id="{{ form.trigger_event.id_for_label }}" 
+                                                class="form-select {% if form.trigger_event.errors %}is-invalid{% endif %}">
+                                            <option value="">{% trans "Select trigger event" %}</option>
+                                            {% for value, label in form.trigger_event.field.choices %}
+                                                {% if value %}
+                                                    <option value="{{ value }}" {% if form.trigger_event.value == value %}selected{% endif %}>
+                                                        {{ label }}
+                                                    </option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        {% if form.trigger_event.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.trigger_event.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.trigger_delay.id_for_label }}" class="form-label">
+                                            <i class="bi bi-hourglass me-1"></i>{{ form.trigger_delay.label }}
+                                        </label>
+                                        <input type="text" 
+                                               name="{{ form.trigger_delay.name }}" 
+                                               id="{{ form.trigger_delay.id_for_label }}" 
+                                               class="form-control {% if form.trigger_delay.errors %}is-invalid{% endif %}" 
+                                               value="{{ form.trigger_delay.value|default:'' }}"
+                                               placeholder="{% trans 'e.g., 1 day, 2 hours' %}">
+                                        {% if form.trigger_delay.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.trigger_delay.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">{% trans "Format: days hours:minutes:seconds" %}</div>
+                                    </div>
+                                </div>
+
+                                <!-- Language & Status -->
+                                <div class="col-md-6 mb-4">
+                                    <h5 class="border-bottom pb-2">{% trans "Language & Status" %}</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.language.id_for_label }}" class="form-label">
+                                            <i class="bi bi-translate me-1"></i>{{ form.language.label }}
+                                        </label>
+                                        <select name="{{ form.language.name }}" 
+                                                id="{{ form.language.id_for_label }}" 
+                                                class="form-select {% if form.language.errors %}is-invalid{% endif %}">
+                                            {% for value, label in form.language.field.choices %}
+                                                <option value="{{ value }}" {% if form.language.value == value %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if form.language.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.language.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.available_languages.id_for_label }}" class="form-label">
+                                            <i class="bi bi-globe me-1"></i>{{ form.available_languages.label }}
+                                        </label>
+                                        <select name="{{ form.available_languages.name }}" 
+                                                id="{{ form.available_languages.id_for_label }}" 
+                                                class="form-select {% if form.available_languages.errors %}is-invalid{% endif %}" 
+                                                multiple>
+                                            {% for value, label in form.available_languages.field.choices %}
+                                                <option value="{{ value }}" {% if value in form.available_languages.value %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if form.available_languages.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.available_languages.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">{% trans "Hold Ctrl/Cmd to select multiple languages" %}</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.status.id_for_label }}" class="form-label">
+                                            <i class="bi bi-toggle-on me-1"></i>{{ form.status.label }}
+                                        </label>
+                                        <select name="{{ form.status.name }}" 
+                                                id="{{ form.status.id_for_label }}" 
+                                                class="form-select {% if form.status.errors %}is-invalid{% endif %}">
+                                            {% for value, label in form.status.field.choices %}
+                                                <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if form.status.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.status.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Schedule & Limits -->
+                                <div class="col-md-6 mb-4">
+                                    <h5 class="border-bottom pb-2">{% trans "Schedule & Limits" %}</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar me-1"></i>{{ form.start_date.label }}
+                                        </label>
+                                        <input type="datetime-local" 
+                                               name="{{ form.start_date.name }}" 
+                                               id="{{ form.start_date.id_for_label }}" 
+                                               class="form-control {% if form.start_date.errors %}is-invalid{% endif %}" 
+                                               value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
+                                        {% if form.start_date.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.start_date.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                            <i class="bi bi-calendar-check me-1"></i>{{ form.end_date.label }}
+                                        </label>
+                                        <input type="datetime-local" 
+                                               name="{{ form.end_date.name }}" 
+                                               id="{{ form.end_date.id_for_label }}" 
+                                               class="form-control {% if form.end_date.errors %}is-invalid{% endif %}" 
+                                               value="{{ form.end_date.value|date:'Y-m-d\TH:i'|default:'' }}">
+                                        {% if form.end_date.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.end_date.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.response_limit.id_for_label }}" class="form-label">
+                                            <i class="bi bi-graph-up me-1"></i>{{ form.response_limit.label }}
+                                        </label>
+                                        <input type="number" 
+                                               name="{{ form.response_limit.name }}" 
+                                               id="{{ form.response_limit.id_for_label }}" 
+                                               class="form-control {% if form.response_limit.errors %}is-invalid{% endif %}" 
+                                               value="{{ form.response_limit.value|default:'' }}"
+                                               min="1"
+                                               placeholder="{% trans 'Leave empty for unlimited' %}">
+                                        {% if form.response_limit.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.response_limit.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Theme Settings -->
+                                <div class="col-md-6 mb-4">
+                                    <h5 class="border-bottom pb-2">{% trans "Theme & Branding" %}</h5>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-palette me-2"></i>
+                                        {% trans "Customize the survey appearance with JSON:" %}
+                                        <pre class="mt-2 mb-0">{
+  "primary_color": "#007bff",
+  "background_color": "#ffffff", 
+  "font_family": "Arial, sans-serif",
+  "button_radius": "8px"
+}</pre>
+                                    </div>
+                                    
+                                    <label for="{{ form.theme_settings.id_for_label }}" class="form-label">
+                                        <i class="bi bi-palette me-1"></i>{{ form.theme_settings.label }}
+                                    </label>
+                                    <textarea name="{{ form.theme_settings.name }}" 
+                                              id="{{ form.theme_settings.id_for_label }}" 
+                                              class="form-control {% if form.theme_settings.errors %}is-invalid{% endif %}" 
+                                              rows="4"
+                                              placeholder="{% trans 'Enter theme settings in JSON format' %}">{{ form.theme_settings.value|default:'' }}</textarea>
+                                    {% if form.theme_settings.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.theme_settings.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                                <a href="{% url 'surveys:survey-list' organization_pk=organization.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i> {% trans "Back to Surveys" %}
+                                </a>
+                                <button type="submit" class="btn btn-{% if form.instance.pk %}warning{% else %}success{% endif %}">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% if form.instance.pk %}
+                                        {% trans "Update Survey" %}
+                                    {% else %}
+                                        {% trans "Create Survey" %}
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // JSON validation for questions field
+    const questionsField = document.getElementById('{{ form.questions.id_for_label }}');
+    if (questionsField) {
+        questionsField.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value) {
+                try {
+                    JSON.parse(value);
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } catch (e) {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            }
+        });
+    }
+
+    // JSON validation for theme settings
+    const themeField = document.getElementById('{{ form.theme_settings.id_for_label }}');
+    if (themeField) {
+        themeField.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value) {
+                try {
+                    JSON.parse(value);
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } catch (e) {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "CES Responses" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-list text-primary"></i> {% trans "Customer Effort Score Responses" %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'surveys:ces-response-dashboard' organization.id %}" class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-tachometer-alt"></i> {% trans "Dashboard" %}
+        </a>
+        <a href="#" class="btn btn-sm btn-success">
+            <i class="fas fa-plus"></i> {% trans "Add Response" %}
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-box mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">{% trans "Effort Level" %}</label>
+            <select name="effort_level" class="form-select form-select-sm">
+                <option value="">{% trans "All Levels" %}</option>
+                <option value="very_easy" {% if filter_params.effort_level == 'very_easy' %}selected{% endif %}>{% trans "Very Easy" %}</option>
+                <option value="easy" {% if filter_params.effort_level == 'easy' %}selected{% endif %}>{% trans "Easy" %}</option>
+                <option value="somewhat_easy" {% if filter_params.effort_level == 'somewhat_easy' %}selected{% endif %}>{% trans "Somewhat Easy" %}</option>
+                <option value="neutral" {% if filter_params.effort_level == 'neutral' %}selected{% endif %}>{% trans "Neutral" %}</option>
+                <option value="somewhat_difficult" {% if filter_params.effort_level == 'somewhat_difficult' %}selected{% endif %}>{% trans "Somewhat Difficult" %}</option>
+                <option value="difficult" {% if filter_params.effort_level == 'difficult' %}selected{% endif %}>{% trans "Difficult" %}</option>
+                <option value="very_difficult" {% if filter_params.effort_level == 'very_difficult' %}selected{% endif %}>{% trans "Very Difficult" %}</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label">{% trans "Effort Area" %}</label>
+            <select name="effort_area" class="form-select form-select-sm">
+                <option value="">{% trans "All Areas" %}</option>
+                <option value="purchase" {% if filter_params.effort_area == 'purchase' %}selected{% endif %}>{% trans "Purchase Process" %}</option>
+                <option value="support" {% if filter_params.effort_area == 'support' %}selected{% endif %}>{% trans "Getting Support" %}</option>
+                <option value="problem_resolution" {% if filter_params.effort_area == 'problem_resolution' %}selected{% endif %}>{% trans "Problem Resolution" %}</option>
+                <option value="navigation" {% if filter_params.effort_area == 'navigation' %}selected{% endif %}>{% trans "Website/App Navigation" %}</option>
+                <option value="information_finding" {% if filter_params.effort_area == 'information_finding' %}selected{% endif %}>{% trans "Finding Information" %}</option>
+                <option value="account_management" {% if filter_params.effort_area == 'account_management' %}selected{% endif %}>{% trans "Account Management" %}</option>
+                <option value="other" {% if filter_params.effort_area == 'other' %}selected{% endif %}>{% trans "Other" %}</option>
+            </select>
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Date From" %}</label>
+            <input type="date" name="date_from" class="form-control form-control-sm" 
+                   value="{{ filter_params.date_from }}">
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Date To" %}</label>
+            <input type="date" name="date_to" class="form-control form-control-sm" 
+                   value="{{ filter_params.date_to }}">
+        </div>
+        
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Search" %}</label>
+            <input type="text" name="search" class="form-control form-control-sm" 
+                   placeholder="{% trans "Search..." %}" value="{{ filter_params.search }}">
+        </div>
+        
+        <div class="col-md-12 mt-3">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter"></i> {% trans "Apply Filters" %}
+            </button>
+            <a href="{% url 'surveys:ces-response-list' organization.id %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-times"></i> {% trans "Clear Filters" %}
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            {% trans "Total Responses" %}
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ total_responses }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            {% trans "Avg CES Score" %}
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ avg_score|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            {% trans "Low Effort" %}
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ low_effort_count }} ({% widthratio low_effort_count total_responses 100 %}%)
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-thumbs-up fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            {% trans "High Effort" %}
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ high_effort_count }} ({% widthratio high_effort_count total_responses 100 %}%)
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-thumbs-down fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Responses Table -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-table"></i> {% trans "Responses" %} ({{ page_obj.paginator.count }} {% trans "total" %})
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Customer" %}</th>
+                        <th>{% trans "Score" %}</th>
+                        <th>{% trans "Effort Level" %}</th>
+                        <th>{% trans "Effort Area" %}</th>
+                        <th>{% trans "Task" %}</th>
+                        <th>{% trans "Feedback" %}</th>
+                        <th>{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for response in ces_responses %}
+                    <tr>
+                        <td>{{ response.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <small>{{ response.customer.email|truncatechars:20 }}</small>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if response.normalized_score >= 80 %}bg-success
+                                {% elif response.normalized_score >= 60 %}bg-primary
+                                {% elif response.normalized_score >= 40 %}bg-warning
+                                {% else %}bg-danger{% endif %}">
+                                {{ response.score }}/{{ response.scale_max }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if response.effort_level == 'very_easy' %}
+                            <span class="badge badge-very-easy">{{ response.get_effort_level_display }}</span>
+                            {% elif response.effort_level == 'easy' %}
+                            <span class="badge badge-easy">{{ response.get_effort_level_display }}</span>
+                            {% elif response.effort_level == 'somewhat_easy' %}
+                            <span class="badge badge-somewhat-easy">{{ response.get_effort_level_display }}</span>
+                            {% elif response.effort_level == 'neutral' %}
+                            <span class="badge badge-neutral">{{ response.get_effort_level_display }}</span>
+                            {% elif response.effort_level == 'somewhat_difficult' %}
+                            <span class="badge badge-somewhat-difficult">{{ response.get_effort_level_display }}</span>
+                            {% elif response.effort_level == 'difficult' %}
+                            <span class="badge badge-difficult">{{ response.get_effort_level_display }}</span>
+                            {% elif response.effort_level == 'very_difficult' %}
+                            <span class="badge badge-very-difficult">{{ response.get_effort_level_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ response.get_effort_area_display|default:"N/A" }}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ response.task_description|truncatechars:30|default:"No task" }}
+                            </small>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ response.feedback_comment|truncatechars:50|default:"No comment" }}
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'surveys:ces-response-detail' organization.id response.id %}" 
+                                   class="btn btn-outline-primary" title="{% trans 'View' %}">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'surveys:ces-response-delete' organization.id response.id %}" 
+                                   class="btn btn-outline-danger" title="{% trans 'Delete' %}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">{% trans "No CES responses found." %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "First" %}
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Previous" %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Next" %}
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filter_params.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Last" %}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="card mt-4">
+    <div class="card-body text-center">
+        <h6 class="card-title mb-3">{% trans "Export Data" %}</h6>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary">
+                <i class="fas fa-file-excel"></i> {% trans "Export to Excel" %}
+            </button>
+            <button type="button" class="btn btn-outline-secondary">
+                <i class="fas fa-file-csv"></i> {% trans "Export to CSV" %}
+            </button>
+            <button type="button" class="btn btn-outline-info">
+                <i class="fas fa-file-pdf"></i> {% trans "Export to PDF" %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

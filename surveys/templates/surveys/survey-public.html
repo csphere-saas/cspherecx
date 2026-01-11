@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ survey.title }}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    {% if organization and organization.logo_url %}
+                        <img src="{{ organization.logo_url }}" alt="{{ organization.name }}" 
+                             class="mb-3" style="max-height: 50px;">
+                    {% elif organization and organization.logo %}
+                        <img src="{{ organization.logo.url }}" alt="{{ organization.name }}" 
+                             class="mb-3" style="max-height: 50px;">
+                    {% endif %}
+                    <h2 class="card-title mb-2">{{ survey.title }}</h2>
+                    {% if survey.description %}
+                        <p class="card-text mb-0 opacity-75">{{ survey.description }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="post" id="survey-form" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        {% for field in form %}
+                            <div class="survey-question mb-4 p-3 border rounded">
+                                <label class="form-label fw-bold mb-3">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                
+                                {% if field.field.widget.input_type == 'radio' %}
+                                    {% if 'nps' in survey.survey_type %}
+                                        <div class="nps-rating">
+                                            {% for choice in field %}
+                                                <div class="form-check form-check-inline">
+                                                    <input type="radio" 
+                                                           name="{{ field.name }}" 
+                                                           value="{{ choice.data.value }}" 
+                                                           id="{{ choice.id_for_label }}"
+                                                           class="form-check-input"
+                                                           {% if choice.data.selected %}checked{% endif %}
+                                                           required="{{ field.field.required }}">
+                                                    <label class="form-check-label rating-label" for="{{ choice.id_for_label }}">
+                                                        {{ choice.choice_label }}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="rating-options">
+                                            {% for choice in field %}
+                                                <div class="form-check form-check-inline">
+                                                    <input type="radio" 
+                                                           name="{{ field.name }}" 
+                                                           value="{{ choice.data.value }}" 
+                                                           id="{{ choice.id_for_label }}"
+                                                           class="form-check-input"
+                                                           {% if choice.data.selected %}checked{% endif %}
+                                                           required="{{ field.field.required }}">
+                                                    <label class="form-check-label rating-label" for="{{ choice.id_for_label }}">
+                                                        {{ choice.choice_label }}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text }}</div>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                {% if field.errors %}
+                                    <div class="alert alert-danger mt-2">
+                                        {% for error in field.errors %}
+                                            <div class="small">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                {% trans "Submit Survey" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-center text-muted py-3">
+                    <small>
+                        {% trans "Powered by" %} 
+                        {% if organization %}
+                            {{ organization.name }}
+                        {% else %}
+                            {% trans "Survey System" %}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize rating inputs with active states
+    function initializeRatingInputs() {
+        const radioGroups = document.querySelectorAll('.nps-rating, .rating-options');
+        
+        radioGroups.forEach(group => {
+            const radios = group.querySelectorAll('input[type="radio"]');
+            const labels = group.querySelectorAll('.rating-label');
+            
+            // Set initial active states
+            radios.forEach(radio => {
+                if (radio.checked) {
+                    const label = radio.nextElementSibling;
+                    if (label && label.classList.contains('rating-label')) {
+                        label.classList.add('active');
+                    }
+                }
+                
+                // Add change event listeners
+                radio.addEventListener('change', function() {
+                    // Remove active class from all labels in this group
+                    labels.forEach(label => label.classList.remove('active'));
+                    
+                    // Add active class to selected label
+                    const selectedLabel = this.nextElementSibling;
+                    if (selectedLabel && selectedLabel.classList.contains('rating-label')) {
+                        selectedLabel.classList.add('active');
+                    }
+                });
+                
+                // Also trigger change on click for better UX
+                radio.addEventListener('click', function() {
+                    this.dispatchEvent(new Event('change'));
+                });
+            });
+        });
+    }
+    
+    // Initialize on page load
+    initializeRatingInputs();
+    
+    // Form submission handling
+    const surveyForm = document.getElementById('survey-form');
+    if (surveyForm) {
+        surveyForm.addEventListener('submit', function(e) {
+            // Basic client-side validation
+            const requiredRadios = this.querySelectorAll('input[type="radio"][required]');
+            const radioGroups = {};
+            
+            requiredRadios.forEach(radio => {
+                const groupName = radio.name;
+                if (!radioGroups[groupName]) {
+                    radioGroups[groupName] = [];
+                }
+                radioGroups[groupName].push(radio);
+            });
+            
+            let isValid = true;
+            Object.keys(radioGroups).forEach(groupName => {
+                const groupRadios = radioGroups[groupName];
+                const isChecked = groupRadios.some(radio => radio.checked);
+                if (!isChecked) {
+                    isValid = false;
+                    // Highlight the first radio in group as error
+                    const firstRadio = groupRadios[0];
+                    const questionDiv = firstRadio.closest('.survey-question');
+                    if (questionDiv) {
+                        questionDiv.classList.add('border-danger');
+                    }
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('{% trans "Please answer all required questions." %}');
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.nps-rating .rating-label.active,
+.rating-options .rating-label.active {
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+}
+
+.nps-rating .rating-label,
+.rating-options .rating-label {
+    border: 2px solid #dee2e6;
+    border-radius: 5px;
+    padding: 8px 12px;
+    margin: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 50px;
+    text-align: center;
+}
+
+.nps-rating .rating-label:hover,
+.rating-options .rating-label:hover {
+    background-color: #e9ecef;
+    border-color: #007bff;
+}
+
+.survey-question {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.survey-question:focus-within {
+    border-left-color: #28a745;
+    background-color: #f8f9fa;
+}
+
+.survey-question.border-danger {
+    border-left-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+/* Improve form styling */
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+/* NPS specific styling */
+.nps-rating {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.nps-rating .form-check-inline {
+    margin-right: 0;
+    flex: 1;
+    text-align: center;
+}
+</style>
+{% endblock %}

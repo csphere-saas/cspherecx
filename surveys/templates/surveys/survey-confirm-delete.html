@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Delete Survey" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        {% trans "Confirm Deletion" %}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <h5 class="text-danger mb-3">{% trans "Are you sure you want to delete this survey?" %}</h5>
+                    
+                    <div class="mb-4">
+                        <strong>{{ survey.title }}</strong>
+                        {% if survey.description %}
+                            <p class="text-muted mb-2">{{ survey.description }}</p>
+                        {% endif %}
+                        <div class="text-muted small">
+                            {% trans "Created" %}: {{ survey.created|date:"M d, Y" }} | 
+                            {% trans "Responses" %}: {{ survey.total_responses }} |
+                            {% trans "Status" %}: {{ survey.get_status_display }}
+                        </div>
+                    </div>
+
+                    {% if survey.total_responses > 0 %}
+                    <div class="alert alert-warning small">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {% blocktrans count responses=survey.total_responses %}
+                            This will permanently delete {{ responses }} collected response.
+                        {% plural %}
+                            This will permanently delete {{ responses }} collected responses.
+                        {% endblocktrans %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>
+                                {% trans "Yes, Delete Survey" %}
+                            </button>
+                            <a href="{% url 'surveys:survey-detail' organization_pk=organization.pk pk=survey.pk %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

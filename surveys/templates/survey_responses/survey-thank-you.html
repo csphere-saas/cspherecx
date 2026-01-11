@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Thank You" %}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <div class="card shadow-sm border-0">
+        <div class="card-body py-5">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+            </div>
+            
+            <h1 class="h2 mb-3">{% trans "Thank You!" %}</h1>
+            
+            <p class="lead mb-4">
+                {% trans "We appreciate you taking the time to complete our survey. Your feedback is valuable to us and helps us improve our services." %}
+            </p>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="alert alert-success">
+                        <h5 class="alert-heading">{% trans "Survey Completed" %}</h5>
+                        <p class="mb-0">
+                            {% trans "Your response has been recorded successfully." %}
+                            {% if survey_response.completed_at %}
+                            <br><small>{% trans "Completed on:" %} {{ survey_response.completed_at|date:"DATETIME_FORMAT" }}</small>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            {% if survey_response.survey.organization.website %}
+            <div class="mt-4">
+                <a href="{{ survey_response.survey.organization.website }}" class="btn btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-2"></i>
+                    {% trans "Visit Our Website" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Surveys" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+"
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-clipboard-data me-2"></i>{% trans "Surveys" %}</h1>
+            <p class="text-muted mb-0">{% blocktrans with org_name=organization.name %}Manage customer experience surveys for {{ org_name }}{% endblocktrans %}</p>
+        </div>
+        <a href="{% url 'surveys:survey-create' organization_pk=organization.pk %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> {% trans "Create Survey" %}
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_surveys }}</h4>
+                            <p class="mb-0">{% trans "Total Surveys" %}</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clipboard-data fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ active_surveys }}</h4>
+                            <p class="mb-0">{% trans "Active Surveys" %}</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-play-circle fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_responses }}</h4>
+                            <p class="mb-0">{% trans "Total Responses" %}</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-chat-square-text fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="bi bi-funnel me-2"></i>{% trans "Filters & Search" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "Search Surveys" %}</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="{% trans 'Search by title or description...' %}" value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{% trans "Survey Type" %}</label>
+                    <select name="survey_type" class="form-select">
+                        <option value="">{% trans "All Types" %}</option>
+                        <option value="nps" {% if selected_type == 'nps' %}selected{% endif %}>{% trans "NPS" %}</option>
+                        <option value="csat" {% if selected_type == 'csat' %}selected{% endif %}>{% trans "CSAT" %}</option>
+                        <option value="ces" {% if selected_type == 'ces' %}selected{% endif %}>{% trans "CES" %}</option>
+                        <option value="custom" {% if selected_type == 'custom' %}selected{% endif %}>{% trans "Custom" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{% trans "Status" %}</label>
+                    <select name="status" class="form-select">
+                        <option value="">{% trans "All Statuses" %}</option>
+                        <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>{% trans "Draft" %}</option>
+                        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>{% trans "Active" %}</option>
+                        <option value="paused" {% if selected_status == 'paused' %}selected{% endif %}>{% trans "Paused" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-search me-1"></i> {% trans "Search" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Surveys Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">{% trans "Survey List" %}</h5>
+            <span class="badge bg-secondary">
+                {% blocktrans count counter=surveys|length %}
+                    {{ counter }} survey
+                {% plural %}
+                    {{ counter }} surveys
+                {% endblocktrans %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if surveys %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Survey" %}</th>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                <th>{% trans "Responses" %}</th>
+                                <th>{% trans "Response Rate" %}</th>
+                                <th>{% trans "Created" %}</th>
+                                <th>{% trans "Actions" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for survey in surveys %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong class="d-block">{{ survey.title }}</strong>
+                                            {% if survey.description %}
+                                                <small class="text-muted">{{ survey.description|truncatewords:10 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ survey.get_survey_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if survey.status == 'active' %}bg-success
+                                            {% elif survey.status == 'draft' %}bg-secondary
+                                            {% elif survey.status == 'paused' %}bg-warning
+                                            {% else %}bg-dark{% endif %}">
+                                            {{ survey.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ survey.total_responses }}</strong>
+                                        <small class="text-muted">/{{ survey.total_sent }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress survey-progress flex-grow-1 me-2" style="width: 100px;">
+                                                <div class="progress-bar bg-success" 
+                                                     role="progressbar" 
+                                                     style="width: {{ survey.response_rate }}%"
+                                                     aria-valuenow="{{ survey.response_rate }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span>{{ survey.response_rate|floatformat:1 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ survey.created|date:"M d, Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'surveys:survey-detail' organization_pk=organization.pk pk=survey.pk %}" 
+                                               class="btn btn-outline-primary" title="{% trans 'View' %}">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'surveys:survey-update' organization_pk=organization.pk pk=survey.pk %}" 
+                                               class="btn btn-outline-secondary" title="{% trans 'Edit' %}">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'surveys:survey-analytics' organization_pk=organization.pk pk=survey.pk %}" 
+                                               class="btn btn-outline-info" title="{% trans 'Analytics' %}">
+                                                <i class="bi bi-graph-up"></i>
+                                            </a>
+                                            {% if survey.status == 'active' %}
+                                                <a href="{% url 'surveys:survey-public' survey_uuid=survey.metadata.public_uuid|default:survey.pk %}" 
+                                                   class="btn btn-outline-success" title="{% trans 'Public Link' %}" target="_blank">
+                                                    <i class="bi bi-link"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-clipboard-data fa-4x text-muted mb-3"></i>
+                    <h4>{% trans "No surveys found" %}</h4>
+                    <p class="text-muted mb-4">
+                        {% if search_query or selected_type or selected_status %}
+                            {% trans "Try adjusting your search filters or" %}
+                        {% endif %}
+                        {% trans "Get started by creating your first survey." %}
+                    </p>
+                    <a href="{% url 'surveys:survey-create' organization_pk=organization.pk %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-1"></i> {% trans "Create Your First Survey" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

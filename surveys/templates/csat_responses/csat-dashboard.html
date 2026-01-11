@@ -1,0 +1,638 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}CSAT Dashboard - {{ organization.name }}{% endblock %}
+<head>
+    <style>
+        .badge-satisfaction {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.badge-very-satisfied {
+    background-color: #1cc88a;
+    color: white;
+}
+
+.badge-satisfied {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-neutral {
+    background-color: #f6c23e;
+    color: #333;
+}
+
+.badge-dissatisfied {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.badge-very-dissatisfied {
+    background-color: #e74a3b;
+    color: white;
+}
+
+.badge-lg {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+    </style>
+</head>
+{% block content %}
+<sections class="py-5"><p></p><br><br></section>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-tachometer-alt text-primary"></i> CSAT Dashboard
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportCharts()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Responses
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">{{ total_responses }}</div>
+                        <div class="text-xs text-muted">
+                            Last {{ days_filter }} days
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Average Score
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">
+                            {{ avg_score|floatformat:1 }}%
+                        </div>
+                        <div class="text-xs text-muted">
+                            {% if avg_score >= 80 %}
+                            <span class="text-success">Excellent</span>
+                            {% elif avg_score >= 60 %}
+                            <span class="text-primary">Good</span>
+                            {% else %}
+                            <span class="text-danger">Needs Improvement</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            NPS Score
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">
+                            {{ nps_score|floatformat:1 }}
+                        </div>
+                        <div class="text-xs text-muted">
+                            {% if nps_score >= 50 %}
+                            <span class="text-success">Excellent</span>
+                            {% elif nps_score >= 0 %}
+                            <span class="text-primary">Good</span>
+                            {% else %}
+                            <span class="text-danger">Poor</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-star fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card danger h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Response Rate
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">
+                            {{ response_rate|floatformat:1 }}%
+                        </div>
+                        <div class="text-xs text-muted">
+                            {% if response_rate >= 30 %}
+                            <span class="text-success">High</span>
+                            {% elif response_rate >= 15 %}
+                            <span class="text-primary">Average</span>
+                            {% else %}
+                            <span class="text-danger">Low</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> Satisfaction Distribution
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="satisfactionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie"></i> Score Distribution
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line"></i> Daily Score Trend
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-exchange-alt"></i> Interaction Type Performance
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="interactionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-users"></i> Top Customers by Responses
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Responses</th>
+                                <th>Avg Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in top_customers %}
+                            <tr>
+                                <td>{{ customer.customer__email|truncatechars:20 }}</td>
+                                <td>{{ customer.response_count }}</td>
+                                <td>
+                                    <span class="badge {% if customer.avg_score >= 80 %}bg-success{% elif customer.avg_score >= 60 %}bg-primary{% else %}bg-warning{% endif %}">
+                                        {{ customer.avg_score|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-robot"></i> AI Analysis Themes
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if common_themes %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for theme, count in common_themes %}
+                    <span class="badge bg-info mb-1">
+                        {{ theme }} <span class="badge bg-light text-dark">{{ count }}</span>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No AI analysis themes available.</p>
+                {% endif %}
+                
+                {% if sentiment_data != '[]' %}
+                <div class="mt-3">
+                    <h6 class="font-weight-bold">Sentiment Distribution</h6>
+                    <div class="chart-container" style="height: 150px;">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'surveys:csat-response-list' organization.id %}" class="btn btn-primary">
+                        <i class="fas fa-list"></i> View All Responses
+                    </a>
+                    <a href="#" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add Manual Response
+                    </a>
+                    <a href="#" class="btn btn-info">
+                        <i class="fas fa-file-export"></i> Generate Report
+                    </a>
+                    <a href="#" class="btn btn-warning">
+                        <i class="fas fa-bell"></i> Set Alerts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart colors
+const chartColors = {
+    primary: '#4e73df',
+    success: '#1cc88a',
+    info: '#36b9cc',
+    warning: '#f6c23e',
+    danger: '#e74a3b',
+    secondary: '#858796'
+};
+
+// Satisfaction Distribution Chart
+function renderSatisfactionChart() {
+    const data = {{ satisfaction_distribution|safe }};
+    
+    const labels = data.map(item => {
+        const level = item.satisfaction_level;
+        return level.replace('_', ' ').toUpperCase();
+    });
+    
+    const counts = data.map(item => item.count);
+    
+    const ctx = document.getElementById('satisfactionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Number of Responses',
+                data: counts,
+                backgroundColor: [
+                    chartColors.danger,
+                    chartColors.warning,
+                    chartColors.secondary,
+                    '#28a745',
+                    chartColors.success
+                ],
+                borderColor: [
+                    '#e74a3b',
+                    '#f6c23e',
+                    '#858796',
+                    '#28a745',
+                    '#1cc88a'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.raw} responses`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Score Distribution Chart
+function renderScoreDistributionChart() {
+    const data = {{ score_distribution|safe }};
+    
+    const labels = data.map(item => `Score ${item.score}`);
+    const counts = data.map(item => item.count);
+    
+    const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: counts,
+                backgroundColor: [
+                    chartColors.danger,
+                    chartColors.warning,
+                    chartColors.secondary,
+                    '#28a745',
+                    chartColors.success,
+                    '#17a2b8',
+                    '#6f42c1'
+                ].slice(0, labels.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Trend Chart
+function renderTrendChart() {
+    const data = {{ daily_trends|safe }};
+    
+    const labels = data.map(item => new Date(item.day).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+    }));
+    const scores = data.map(item => item.avg_score);
+    const counts = data.map(item => item.count);
+    
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Average Score',
+                    data: scores,
+                    borderColor: chartColors.primary,
+                    backgroundColor: chartColors.primary + '20',
+                    yAxisID: 'y',
+                    tension: 0.3
+                },
+                {
+                    label: 'Response Count',
+                    data: counts,
+                    borderColor: chartColors.success,
+                    backgroundColor: chartColors.success + '20',
+                    yAxisID: 'y1',
+                    tension: 0.3,
+                    type: 'bar'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Score (%)'
+                    },
+                    min: 0,
+                    max: 100
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Response Count'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Interaction Chart
+function renderInteractionChart() {
+    const data = {{ interaction_analysis|safe }};
+    
+    const labels = data.map(item => {
+        const type = item.interaction_type;
+        return type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Unknown';
+    });
+    const scores = data.map(item => item.avg_score);
+    const counts = data.map(item => item.count);
+    
+    const ctx = document.getElementById('interactionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Average Score',
+                    data: scores,
+                    borderColor: chartColors.primary,
+                    backgroundColor: chartColors.primary + '40',
+                    pointBackgroundColor: chartColors.primary
+                },
+                {
+                    label: 'Response Count',
+                    data: counts,
+                    borderColor: chartColors.success,
+                    backgroundColor: chartColors.success + '40',
+                    pointBackgroundColor: chartColors.success
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: Math.max(...scores, ...counts) * 1.2
+                }
+            }
+        }
+    });
+}
+
+// Sentiment Chart
+function renderSentimentChart() {
+    const data = {{ sentiment_data|safe }};
+    if (data.length === 0) return;
+    
+    const ctx = document.getElementById('sentimentChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const sentimentRanges = [
+        { label: 'Very Negative', min: -1, max: -0.6, color: chartColors.danger },
+        { label: 'Negative', min: -0.6, max: -0.2, color: '#ff9966' },
+        { label: 'Neutral', min: -0.2, max: 0.2, color: chartColors.warning },
+        { label: 'Positive', min: 0.2, max: 0.6, color: '#99ccff' },
+        { label: 'Very Positive', min: 0.6, max: 1, color: chartColors.success }
+    ];
+    
+    const sentimentCounts = sentimentRanges.map(range => {
+        return data.filter(item => {
+            const score = item.sentiment_score;
+            return score >= range.min && score <= range.max;
+        }).reduce((sum, item) => sum + item.count, 0);
+    });
+    
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: sentimentRanges.map(r => r.label),
+            datasets: [{
+                data: sentimentCounts,
+                backgroundColor: sentimentRanges.map(r => r.color)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Export charts function
+function exportCharts() {
+    const charts = document.querySelectorAll('canvas');
+    charts.forEach((chart, index) => {
+        const link = document.createElement('a');
+        link.download = `csat-chart-${index + 1}.png`;
+        link.href = chart.toDataURL('image/png');
+        link.click();
+    });
+}
+
+// Initialize all charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    renderSatisfactionChart();
+    renderScoreDistributionChart();
+    renderTrendChart();
+    renderInteractionChart();
+    renderSentimentChart();
+});
+</script>
+{% endblock %}

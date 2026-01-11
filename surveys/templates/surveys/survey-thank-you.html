@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Thank You" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle-fill display-4"></i>
+                    </div>
+                    <h2 class="card-title mb-2">{% trans "Thank You!" %}</h2>
+                </div>
+                
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-chat-heart display-1 text-success mb-3"></i>
+                        <h4 class="text-success mb-3">{% trans "Survey Completed" %}</h4>
+                        <p class="lead text-muted mb-4">
+                            {% trans "Thank you for taking the time to complete our survey. Your feedback is valuable and helps us improve our services." %}
+                        </p>
+                    </div>
+
+                    {% if survey %}
+                    <div class="survey-info bg-light p-4 rounded mb-4">
+                        <h5 class="mb-3">{% trans "Survey Completed" %}</h5>
+                        <p class="mb-2"><strong>{{ survey.title }}</strong></p>
+                        {% if survey.organization %}
+                        <p class="text-muted mb-0">{% trans "From:" %} {{ survey.organization.name }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="whats-next mb-4">
+                        <h6 class="text-muted mb-3">{% trans "What happens next?" %}</h6>
+                        <div class="row text-start">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex">
+                                    <i class="bi bi-graph-up text-success me-3 mt-1"></i>
+                                    <div>
+                                        <strong>{% trans "Data Analysis" %}</strong>
+                                        <p class="small text-muted mb-0">{% trans "Your responses will be analyzed along with others to identify trends and insights." %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex">
+                                    <i class="bi bi-shield-check text-success me-3 mt-1"></i>
+                                    <div>
+                                        <strong>{% trans "Privacy Protected" %}</strong>
+                                        <p class="small text-muted mb-0">{% trans "Your responses are anonymous and will be used solely for improvement purposes." %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="actions mt-5">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="/" class="btn btn-success btn-lg">
+                                <i class="bi bi-house me-2"></i>
+                                {% trans "Return to Homepage" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-center text-muted py-3">
+                    <small>
+                        {% trans "Your feedback makes a difference!" %}
+                    </small>
+                    {% if organization %}
+                    <br>
+                    <small>
+                        {% trans "Powered by" %} {{ organization.name }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: none;
+}
+
+.bg-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+}
+
+.display-1 {
+    font-size: 4rem;
+}
+
+.lead {
+    font-size: 1.25rem;
+    font-weight: 300;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-weight: 500;
+}
+
+.survey-info {
+    border-left: 4px solid #198754;
+}
+</style>
+{% endblock %}

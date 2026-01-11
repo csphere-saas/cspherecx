@@ -1,0 +1,57 @@
+{% load i18n %}
+
+{% if question_type == 'boolean' %}
+    <div class="form-check">
+        <input type="checkbox" 
+               class="form-check-input" 
+               {% if answer %}checked{% endif %} 
+               disabled>
+        <label class="form-check-label">
+            {% if answer %}
+                {% trans "Yes" %}
+            {% else %}
+                {% trans "No" %}
+            {% endif %}
+        </label>
+    </div>
+
+{% elif question_type == 'multiple_choice' %}
+    <div class="multiple-choice-answers">
+        {% if answer %}
+            {% if answer|length > 0 %}
+                {% for choice in answer %}
+                <div class="form-check">
+                    <input type="checkbox" 
+                           class="form-check-input" 
+                           checked 
+                           disabled>
+                    <label class="form-check-label">{{ choice }}</label>
+                </div>
+                {% endfor %}
+            {% else %}
+                <span class="text-muted">{% trans "No selections made" %}</span>
+            {% endif %}
+        {% else %}
+            <span class="text-muted">{% trans "No answer provided" %}</span>
+        {% endif %}
+    </div>
+
+{% elif question_type == 'rating' or question_type == 'nps' or question_type == 'choice' %}
+    <div class="choice-answer">
+        <span class="badge bg-primary fs-6 px-3 py-2">
+            {{ answer|default:"No answer" }}
+        </span>
+    </div>
+
+{% else %}
+    <!-- Text-based answers -->
+    <div class="text-answer">
+        <div class="card bg-light">
+            <div class="card-body">
+                <p class="mb-0 text-dark">
+                    {{ answer|default:"No answer provided" }}
+                </p>
+            </div>
+        </div>
+    </div>
+{% endif %}

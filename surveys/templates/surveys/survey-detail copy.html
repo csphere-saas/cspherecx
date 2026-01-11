@@ -1,0 +1,535 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ survey.title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+    <div class="container-fluid">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-clipboard-data me-2"></i>{{ survey.title }}</h1>
+                <p class="text-muted mb-0">
+                    {% blocktrans with org_name=organization.name %}Survey details for {{ org_name }}{% endblocktrans %}
+                </p>
+                {% if survey.description %}
+                    <p class="text-muted mt-2">{{ survey.description }}</p>
+                {% endif %}
+            </div>
+            <div class="btn-group">
+                <a href="{% url 'surveys:survey-update' organization_pk=organization.pk pk=survey.pk %}" class="btn btn-warning">
+                    <i class="bi bi-pencil me-1"></i> {% trans "Edit" %}
+                </a>
+                <a href="{% url 'surveys:survey-list' organization_pk=organization.pk %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i> {% trans "Back to Surveys" %}
+                </a>
+            </div>
+        </div>
+
+        <!-- Survey Status Badge -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge bg-{% if survey.status == 'active' %}success{% elif survey.status == 'draft' %}secondary{% elif survey.status == 'paused' %}warning{% else %}dark{% endif %} fs-6">
+                        {{ survey.get_status_display }}
+                    </span>
+                    <span class="badge bg-info fs-6">{{ survey.get_survey_type_display }}</span>
+                    <span class="badge bg-light text-white fs-6">
+                        <i class="bi bi-translate me-1"></i>{{ survey.get_language_display }}
+                    </span>
+                    {% if survey.trigger_event %}
+                        <span class="badge bg-light text-white fs-6">
+                            <i class="bi bi-clock me-1"></i>{{ survey.get_trigger_event_display }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ total_responses }}</h4>
+                                <p class="card-text mb-0">{% trans "Total Responses" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-chat-square-text fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ survey.total_sent }}</h4>
+                                <p class="card-text mb-0">{% trans "Total Sent" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-send fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ response_rate|floatformat:1 }}%</h4>
+                                <p class="card-text mb-0">{% trans "Response Rate" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-graph-up fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if nps_score %}
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ nps_score }}</h4>
+                                <p class="card-text mb-0">{% trans "NPS Score" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-star fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-secondary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ survey.questions|length }}</h4>
+                                <p class="card-text mb-0">{% trans "Questions" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-question-circle fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="row">
+            <!-- Left Column - Survey Details -->
+            <div class="col-lg-8 mb-4">
+                <!-- Survey Questions -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-question-circle me-2"></i>{% trans "Survey Questions" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if survey.questions %}
+                            <div class="list-group list-group-flush">
+                                {% for question in survey.questions %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">{{ question.text }}</div>
+                                            <small class="text-muted">
+                                                {% trans "Type" %}: <span class="badge bg-info">{{ question.type }}</span>
+                                                {% if question.required %}
+                                                    <span class="badge bg-warning ms-1">{% trans "Required" %}</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">#{{ forloop.counter }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-question-circle fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{% trans "No questions configured for this survey." %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Responses -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clock-history me-2"></i>{% trans "Recent Responses" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_responses %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "Respondent" %}</th>
+                                            <th>{% trans "Completed" %}</th>
+                                            <th>{% trans "Time" %}</th>
+                                            <th>{% trans "Actions" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for response in recent_responses %}
+                                            <tr>
+                                                <td>
+                                                    {% if response.respondent_email %}
+                                                        <strong>{{ response.respondent_email }}</strong>
+                                                    {% else %}
+                                                        <span class="text-muted">{% trans "Anonymous" %}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        {% if response.completed_at %}
+                                                            {{ response.completed_at|date:"M d, Y" }}
+                                                        {% else %}
+                                                            {{ response.created|date:"M d, Y" }}
+                                                        {% endif %}
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    {% if response.completion_time %}
+                                                        <span class="badge bg-light text-dark">
+                                                            {{ response.completion_time }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#responseModal{{ response.id }}">
+                                                        <i class="bi bi-eye"></i> {% trans "View" %}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{% trans "No responses yet. Share your survey to start collecting feedback!" %}</p>
+                                {% if survey.status == 'active' %}
+                                    {% if survey.metadata and survey.metadata.public_uuid %}
+                                        {% with public_uuid=survey.metadata.public_uuid %}
+                                            <a href="{% url 'surveys:survey-public' survey_uuid=public_uuid %}" 
+                                               class="btn btn-primary" target="_blank">
+                                                <i class="bi bi-link me-1"></i> {% trans "Get Survey Link" %}
+                                            </a>
+                                        {% endwith %}
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <small>
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                {% trans "Public link not available. Make sure the survey is saved and has a public UUID in metadata." %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Survey Information & Actions -->
+            <div class="col-lg-4 mb-4">
+                <!-- Survey Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>{% trans "Survey Information" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th class="text-muted" width="40%">{% trans "Created" %}:</th>
+                                <td>{{ survey.created|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Last Modified" %}:</th>
+                                <td>{{ survey.modified|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Organization" %}:</th>
+                                <td>
+                                    <i class="bi bi-building me-1"></i>
+                                    {{ survey.organization.name }}
+                                </td>
+                            </tr>
+                            {% if survey.start_date %}
+                                <tr>
+                                    <th class="text-muted">{% trans "Start Date" %}:</th>
+                                    <td>{{ survey.start_date|date:"M d, Y H:i" }}</td>
+                                </tr>
+                            {% endif %}
+                            {% if survey.end_date %}
+                                <tr>
+                                    <th class="text-muted">{% trans "End Date" %}:</th>
+                                    <td>{{ survey.end_date|date:"M d, Y H:i" }}</td>
+                                </tr>
+                            {% endif %}
+                            {% if survey.response_limit %}
+                                <tr>
+                                    <th class="text-muted">{% trans "Response Limit" %}:</th>
+                                    <td>{{ survey.response_limit }}</td>
+                                </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-lightning me-2"></i>{% trans "Quick Actions" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'surveys:survey-update' organization_pk=organization.pk pk=survey.pk %}" 
+                               class="btn btn-warning">
+                                <i class="bi bi-pencil me-2"></i> {% trans "Edit Survey" %}
+                            </a>
+                         
+                            {% if survey.status == 'active' %}
+                                {% if survey.metadata and survey.metadata.public_uuid %}
+                                    {% with public_uuid=survey.metadata.public_uuid %}
+                                        <a href="{% url 'surveys:survey-public' survey_uuid=public_uuid %}" 
+                                           class="btn btn-success" target="_blank">
+                                            <i class="bi bi-link me-2"></i> {% trans "Public Link" %}
+                                        </a>
+                                    {% endwith %}
+                                {% else %}
+                                    <button class="btn btn-outline-secondary" disabled 
+                                            title="{% trans 'Public UUID not available in survey metadata' %}">
+                                        <i class="bi bi-link me-2"></i> {% trans "Public Link" %}
+                                    </button>
+                                    <small class="text-muted text-center">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        {% trans "Save survey to generate link" %}
+                                    </small>
+                                {% endif %}
+                                <a href="{% url 'surveys:survey-analytics' organization_pk=organization.pk pk=survey.pk %}" 
+                                   class="btn btn-info">
+                                    <i class="bi bi-graph-up me-2"></i> {% trans "View Analytics" %}
+                                </a>
+                            {% elif survey.status == 'draft' %}
+                                <button class="btn btn-outline-success" disabled>
+                                    <i class="bi bi-play-circle me-2"></i> {% trans "Activate to Share" %}
+                                </button>
+                            {% endif %}
+                            
+                            <a href="{% url 'surveys:survey-delete' organization_pk=organization.pk pk=survey.pk %}" 
+                               class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-2"></i> {% trans "Delete Survey" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response Progress -->
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-speedometer me-2"></i>{% trans "Response Progress" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">{% trans "Completion Rate" %}</span>
+                                <span class="text-muted">{{ response_rate|floatformat:1 }}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success" 
+                                     role="progressbar" 
+                                     style="width: {{ response_rate }}%"
+                                     aria-valuenow="{{ response_rate }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="border-end">
+                                    <h4 class="text-primary mb-0">{{ total_responses }}</h4>
+                                    <small class="text-muted">{% trans "Responses" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success mb-0">{{ survey.total_sent }}</h4>
+                                <small class="text-muted">{% trans "Sent" %}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Response Detail Modals -->
+{% for response in recent_responses %}
+<div class="modal fade" id="responseModal{{ response.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Response Details" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>{% trans "Respondent" %}:</strong>
+                        {% if response.respondent_email %}
+                            {{ response.respondent_email }}
+                        {% else %}
+                            <span class="text-muted">{% trans "Anonymous" %}</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>{% trans "Completed" %}:</strong>
+                        {% if response.completed_at %}
+                            {{ response.completed_at|date:"M d, Y H:i" }}
+                        {% else %}
+                            {{ response.created|date:"M d, Y H:i" }}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <h6>{% trans "Answers" %}:</h6>
+                <div class="list-group">
+                    {% for question in survey.questions %}
+                        <div class="list-group-item">
+                            <strong>{{ question.text }}</strong>
+                            <div class="mt-1">
+                                {% comment %} 
+                                Handle response data display without custom filters.
+                                We'll try different approaches to find the answer.
+                                {% endcomment %}
+                                
+                                {% with question_id=question.id|default:forloop.counter0 %}
+                                    {% comment %} Convert question_id to string for dictionary lookup {% endcomment %}
+                                    {% with question_id_str=question_id|stringformat:"s" %}
+                                        {% if question_id_str in response.response_data %}
+                                            <span class="badge bg-light text-dark p-2">
+                                                {{ response.response_data.question_id_str }}
+                                            </span>
+                                        {% else %}
+                                            {% comment %} Try with q_ prefix {% endcomment %}
+                                            {% with q_key="q_"|add:forloop.counter0|stringformat:"s" %}
+                                                {% if q_key in response.response_data %}
+                                                    <span class="badge bg-light text-dark p-2">
+                                                        {{ response.response_data.q_key }}
+                                                    </span>
+                                                {% else %}
+                                                    {% comment %} Fallback to getting values by index {% endcomment %}
+                                                    {% with response_values=response.response_data.values %}
+                                                        {% if response_values %}
+                                                            {% for value in response_values %}
+                                                                {% if forloop.counter0 == forloop.parentloop.counter0 %}
+                                                                    <span class="badge bg-light text-dark p-2">
+                                                                        {{ value }}
+                                                                    </span>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <span class="text-muted">{% trans "No answer" %}</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+.progress {
+    border-radius: 10px;
+}
+.progress-bar {
+    border-radius: 10px;
+}
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+.list-group-item:last-child {
+    border-bottom: none;
+}
+.badge {
+    font-size: 0.875em;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Enhanced response modal handling
+    const responseModals = document.querySelectorAll('.modal');
+    responseModals.forEach(modal => {
+        modal.addEventListener('show.bs.modal', function () {
+            // You can add any additional modal initialization here
+            console.log('Opening response modal');
+        });
+    });
+});
+</script>
+{% endblock %}

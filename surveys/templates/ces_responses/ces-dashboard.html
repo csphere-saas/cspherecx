@@ -1,0 +1,768 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "CES Dashboard" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br></section>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-tachometer-alt text-primary"></i> {% trans "Customer Effort Score Dashboard" %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> {% trans "Print" %}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportCharts()">
+                <i class="fas fa-download"></i> {% trans "Export" %}
+            </button>
+        </div>
+        <a href="{% url 'surveys:ces-response-list' organization.id %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-list"></i> {% trans "View All Responses" %}
+        </a>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            {% trans "Total Responses" %}
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">{{ total_responses|default:"0" }}</div>
+                        <div class="text-xs text-muted">
+                            {% if days_filter %}
+                                {% blocktrans with days=days_filter %}Last {{ days }} days{% endblocktrans %}
+                            {% else %}
+                                {% trans "All time" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            {% trans "Average CES Score" %}
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">
+                            {{ avg_ces_score|floatformat:"1"|default:"0.0" }}%
+                        </div>
+                        <div class="text-xs text-muted">
+                            {% if avg_ces_score >= 80 %}
+                            <span class="text-success">{% trans "Excellent" %}</span>
+                            {% elif avg_ces_score >= 60 %}
+                            <span class="text-primary">{% trans "Good" %}</span>
+                            {% else %}
+                            <span class="text-danger">{% trans "Needs Improvement" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            {% trans "CES Metric" %}
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">
+                            {{ ces_metric|floatformat:"1"|default:"0.0" }}%
+                        </div>
+                        <div class="text-xs text-muted">
+                            {% trans "Low Effort Experiences" %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card danger h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            {% trans "Detractor Rate" %}
+                        </div>
+                        <div class="metric-value mb-0 text-gray-800">
+                            {{ detractor_rate|floatformat:"1"|default:"0.0" }}%
+                        </div>
+                        <div class="text-xs text-muted">
+                            {% trans "High Effort Experiences" %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> {% trans "Effort Level Distribution" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if total_responses > 0 %}
+                <div class="chart-container">
+                    <canvas id="effortDistributionChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="effort-progress mb-2">
+                        <div class="progress-bar effort-progress-bar" 
+                             style="width: {{ ces_metric|default:0 }}%"
+                             role="progressbar" 
+                             aria-valuenow="{{ ces_metric|default:0 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>{% trans "Very Difficult" %}</span>
+                        <span>{% trans "Very Easy" %}</span>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "No response data available." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie"></i> {% trans "Score Distribution" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if total_responses > 0 %}
+                <div class="chart-container">
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">{% trans "Scale: 1 (Very Difficult) to" %} {{ scale_max|default:7 }} ({% trans "Very Easy" %})</small>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "No score data available." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line"></i> {% trans "Daily CES Trend" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if total_responses > 0 %}
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "No trend data available." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-area"></i> {% trans "Effort Area Performance" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if total_responses > 0 %}
+                <div class="chart-container">
+                    <canvas id="effortAreaChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "No effort area data available." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables and Analysis -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-exclamation-circle"></i> {% trans "Common Friction Points" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if common_friction_points %}
+                <div class="list-group list-group-flush">
+                    {% for point, count in common_friction_points %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-break">{{ point }}</span>
+                            <span class="badge bg-danger">{{ count }}</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar bg-danger" 
+                                 style="width: {% widthratio count total_responses 100 %}%"
+                                 role="progressbar"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "No friction points identified. Enable AI analysis to detect friction points." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-users"></i> {% trans "Customer Effort Segmentation" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-danger">{% trans "High Effort Customers" %}</h6>
+                        {% if high_effort_customers %}
+                        <div class="list-group list-group-flush">
+                            {% for customer in high_effort_customers %}
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <small class="text-truncate d-block">{{ customer.customer__email|default:"Unknown" }}</small>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">{% trans "Score:" %} {{ customer.avg_score|floatformat:1 }}%</small>
+                                    <small class="text-muted">{{ customer.response_count }} {% trans "responses" %}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted small">{% trans "No high effort customers found." %}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-success">{% trans "Low Effort Customers" %}</h6>
+                        {% if low_effort_customers %}
+                        <div class="list-group list-group-flush">
+                            {% for customer in low_effort_customers %}
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <small class="text-truncate d-block">{{ customer.customer__email|default:"Unknown" }}</small>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">{% trans "Score:" %} {{ customer.avg_score|floatformat:1 }}%</small>
+                                    <small class="text-muted">{{ customer.response_count }} {% trans "responses" %}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted small">{% trans "No low effort customers found." %}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Charts -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-tasks"></i> {% trans "Task Performance" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if total_responses > 0 %}
+                <div class="chart-container">
+                    <canvas id="taskPerformanceChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "No task performance data available." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-robot"></i> {% trans "Sentiment Analysis" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if sentiment_data != '[]' and total_responses > 0 %}
+                <div class="chart-container">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i><br>
+                    {% trans "Enable AI analysis to see sentiment data." %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt"></i> {% trans "Quick Actions" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-6">
+                        <a href="{% url 'surveys:ces-response-list' organization.id %}" class="btn btn-primary w-100">
+                            <i class="fas fa-list me-1"></i> {% trans "View All" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" class="btn btn-success w-100">
+                            <i class="fas fa-plus me-1"></i> {% trans "Add Response" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" class="btn btn-info w-100">
+                            <i class="fas fa-file-export me-1"></i> {% trans "Export Report" %}
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="#" class="btn btn-warning w-100">
+                            <i class="fas fa-bell me-1"></i> {% trans "Set Alerts" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart colors
+const chartColors = {
+    primary: '#4e73df',
+    success: '#1cc88a',
+    info: '#36b9cc',
+    warning: '#f6c23e',
+    danger: '#e74a3b',
+    secondary: '#858796'
+};
+
+// Effort level labels and colors
+const effortLevels = {
+    'very_difficult': { label: '{% trans "Very Difficult" %}', color: '#dc3545' },
+    'difficult': { label: '{% trans "Difficult" %}', color: '#e74a3b' },
+    'somewhat_difficult': { label: '{% trans "Somewhat Difficult" %}', color: '#ff6b6b' },
+    'neutral': { label: '{% trans "Neutral" %}', color: '#f6c23e' },
+    'somewhat_easy': { label: '{% trans "Somewhat Easy" %}', color: '#4e73df' },
+    'easy': { label: '{% trans "Easy" %}', color: '#36b9cc' },
+    'very_easy': { label: '{% trans "Very Easy" %}', color: '#1cc88a' }
+};
+
+// Effort Distribution Chart
+function renderEffortDistributionChart() {
+    const data = JSON.parse('{{ effort_distribution|escapejs }}');
+    
+    if (data.length === 0) return;
+    
+    const labels = data.map(item => effortLevels[item.effort_level]?.label || item.effort_level);
+    const counts = data.map(item => item.count);
+    const colors = data.map(item => effortLevels[item.effort_level]?.color || chartColors.secondary);
+    
+    const ctx = document.getElementById('effortDistributionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '{% trans "Number of Responses" %}',
+                data: counts,
+                backgroundColor: colors,
+                borderColor: colors.map(color => color + 'CC'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = {{ total_responses|default:1 }};
+                            const percentage = ((context.raw / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.raw} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+// Score Distribution Chart
+function renderScoreDistributionChart() {
+    const data = JSON.parse('{{ score_distribution|escapejs }}');
+    
+    if (data.length === 0) return;
+    
+    const labels = data.map(item => `{% trans "Score" %} ${item.score}`);
+    const counts = data.map(item => item.count);
+    
+    // Create gradient colors from red (difficult) to green (easy)
+    const scaleMax = {{ scale_max|default:7 }};
+    const colors = data.map(item => {
+        const percentage = (item.score - 1) / (scaleMax - 1);
+        if (percentage < 0.33) return '#dc3545'; // Red for difficult
+        if (percentage < 0.66) return '#f6c23e'; // Yellow for neutral
+        return '#1cc88a'; // Green for easy
+    });
+    
+    const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: counts,
+                backgroundColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Trend Chart
+function renderTrendChart() {
+    const data = JSON.parse('{{ daily_trends|escapejs }}');
+    
+    if (data.length === 0) return;
+    
+    const labels = data.map(item => {
+        if (!item.day) return '';
+        return new Date(item.day).toLocaleDateString('{{ LANGUAGE_CODE|default:"en-US" }}', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    }).filter(label => label !== '');
+    
+    const scores = data.map(item => item.avg_score || 0);
+    const counts = data.map(item => item.count || 0);
+    
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '{% trans "Average CES Score" %}',
+                    data: scores,
+                    borderColor: chartColors.primary,
+                    backgroundColor: chartColors.primary + '20',
+                    yAxisID: 'y',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: '{% trans "Response Count" %}',
+                    data: counts,
+                    borderColor: chartColors.success,
+                    backgroundColor: chartColors.success + '20',
+                    yAxisID: 'y1',
+                    tension: 0.3,
+                    type: 'bar'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: '{% trans "Score (%)" %}' },
+                    min: 0,
+                    max: 100
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: { display: true, text: '{% trans "Response Count" %}' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
+// Effort Area Chart
+function renderEffortAreaChart() {
+    const data = JSON.parse('{{ effort_area_analysis|escapejs }}');
+    
+    if (data.length === 0) {
+        document.getElementById('effortAreaChart').parentElement.innerHTML = 
+            '<p class="text-muted text-center py-4">{% trans "No effort area data available." %}</p>';
+        return;
+    }
+    
+    const labels = data.map(item => {
+        const area = item.effort_area;
+        return area ? area.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '{% trans "Unknown" %}';
+    });
+    const scores = data.map(item => item.avg_score || 0);
+    
+    const ctx = document.getElementById('effortAreaChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '{% trans "Average CES Score" %}',
+                data: scores,
+                borderColor: chartColors.primary,
+                backgroundColor: chartColors.primary + '40',
+                pointBackgroundColor: chartColors.primary
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { stepSize: 20 }
+                }
+            }
+        }
+    });
+}
+
+// Task Performance Chart
+function renderTaskPerformanceChart() {
+    const data = JSON.parse('{{ task_performance|escapejs }}');
+    
+    if (data.length === 0) {
+        document.getElementById('taskPerformanceChart').parentElement.innerHTML = 
+            '<p class="text-muted text-center py-4">{% trans "No task performance data available." %}</p>';
+        return;
+    }
+    
+    const labels = data.map(item => {
+        const desc = item.task_description || 'Unknown';
+        return desc.length > 20 ? desc.substring(0, 20) + '...' : desc;
+    });
+    const scores = data.map(item => item.avg_score || 0);
+    const counts = data.map(item => item.count || 0);
+    
+    const ctx = document.getElementById('taskPerformanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '{% trans "Average Score" %}',
+                data: scores,
+                backgroundColor: scores.map(score => 
+                    score >= 80 ? chartColors.success :
+                    score >= 60 ? chartColors.primary :
+                    score >= 40 ? chartColors.warning :
+                    chartColors.danger
+                ),
+                yAxisID: 'y'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: '{% trans "Score (%)" %}' },
+                    min: 0,
+                    max: 100
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            return `{% trans "Responses:" %} ${counts[index]}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Sentiment Chart
+function renderSentimentChart() {
+    const data = JSON.parse('{{ sentiment_data|escapejs }}');
+    
+    if (data.length === 0) return;
+    
+    const ctx = document.getElementById('sentimentChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const sentimentLabels = {
+        'negative': '{% trans "Negative" %}',
+        'neutral': '{% trans "Neutral" %}',
+        'positive': '{% trans "Positive" %}'
+    };
+    
+    const labels = data.map(item => sentimentLabels[item.sentiment_bucket] || item.sentiment_bucket);
+    const sentimentCounts = data.map(item => item.count || 0);
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: sentimentCounts,
+                backgroundColor: [
+                    chartColors.danger,
+                    chartColors.warning,
+                    chartColors.success
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Export charts function
+function exportCharts() {
+    const charts = document.querySelectorAll('canvas');
+    if (charts.length === 0) {
+        alert('{% trans "No charts available to export." %}');
+        return;
+    }
+    
+    charts.forEach((chart, index) => {
+        const link = document.createElement('a');
+        link.download = `ces-chart-${index + 1}-${new Date().toISOString().split('T')[0]}.png`;
+        link.href = chart.toDataURL('image/png');
+        link.click();
+    });
+}
+
+// Initialize all charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        renderEffortDistributionChart();
+        renderScoreDistributionChart();
+        renderTrendChart();
+        renderEffortAreaChart();
+        renderTaskPerformanceChart();
+        renderSentimentChart();
+    } catch (error) {
+        console.error('Error rendering charts:', error);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "CES Response Details" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br></section>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-eye text-primary"></i> {% trans "CES Response Details" %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'surveys:ces-response-list' organization.id %}" class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-arrow-left"></i> {% trans "Back to List" %}
+        </a>
+        <a href="{% url 'surveys:ces-response-delete' organization.id ces_response.id %}" class="btn btn-sm btn-danger">
+            <i class="fas fa-trash"></i> {% trans "Delete" %}
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column - Main Info -->
+    <div class="col-lg-8">
+        <!-- Response Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-comment-dots"></i> {% trans "Response Details" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">{% trans "Question Asked" %}</label>
+                            <div class="feedback-text">
+                                {{ ces_response.question_text }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">{% trans "Task Description" %}</label>
+                            {% if ces_response.task_description %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-tasks me-2"></i>
+                                {{ ces_response.task_description }}
+                            </div>
+                            {% else %}
+                            <p class="text-muted"><em>{% trans "No task description provided" %}</em></p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">{% trans "Customer Feedback" %}</label>
+                            {% if ces_response.feedback_comment %}
+                            <div class="feedback-text">
+                                {{ ces_response.feedback_comment|linebreaks }}
+                            </div>
+                            {% else %}
+                            <p class="text-muted"><em>{% trans "No feedback provided" %}</em></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border mb-4">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">{% trans "Customer" %}</label>
+                                    <p class="mb-1">
+                                        <i class="fas fa-user"></i> {{ ces_response.customer.email }}
+                                    </p>
+                                    <small class="text-muted">
+                                        {% blocktrans with date=ces_response.created_at|date:"F j, Y" time=ces_response.created_at|time:"g:i a" %}
+                                        Submitted on {{ date }} at {{ time }}
+                                        {% endblocktrans %}
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">{% trans "Effort Area" %}</label>
+                                    <p>
+                                        <span class="badge bg-info">
+                                            {{ ces_response.get_effort_area_display|default:"N/A" }}
+                                        </span>
+                                    </p>
+                                </div>
+                                
+                                {% if ces_response.survey_response %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">{% trans "Linked Survey" %}</label>
+                                    <p>
+                                        <a href="#" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt"></i> {% trans "View Survey Response" %}
+                                        </a>
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Friction Points -->
+                                {% if ces_response.friction_points %}
+                                <div class="mb-0">
+                                    <label class="form-label text-muted">{% trans "Friction Points" %}</label>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for point in ces_response.friction_points %}
+                                        <span class="badge bg-danger">{{ point }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Analysis Card -->
+        {% if ces_response.ai_analyzed %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-robot"></i> {% trans "AI Analysis" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <label class="form-label text-muted">{% trans "Sentiment Score" %}</label>
+                            <div class="display-4 {% if ces_response.sentiment_score > 0.3 %}text-success{% elif ces_response.sentiment_score < -0.3 %}text-danger{% else %}text-warning{% endif %}">
+                                {{ ces_response.sentiment_score|floatformat:2 }}
+                            </div>
+                            <small class="text-muted">{% trans "Range: -1.0 to 1.0" %}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <label class="form-label text-muted">{% trans "Analysis Details" %}</label>
+                        {% if ces_response.metadata %}
+                            {% if ces_response.metadata.themes %}
+                            <div class="mb-2">
+                                <strong>{% trans "Themes:" %}</strong>
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    {% for theme in ces_response.metadata.themes %}
+                                    <span class="badge bg-secondary">{{ theme }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted">{% trans "No additional analysis metadata available." %}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Right Column - Score & Actions -->
+    <div class="col-lg-4">
+        <!-- Score Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> {% trans "CES Score" %}
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <!-- Effort Level Badge -->
+                <div class="mb-4">
+                    {% if ces_response.effort_level == 'very_easy' %}
+                    <span class="badge badge-very-easy badge-lg p-3">
+                        <i class="fas fa-smile-beam fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% elif ces_response.effort_level == 'easy' %}
+                    <span class="badge badge-easy badge-lg p-3">
+                        <i class="fas fa-smile fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% elif ces_response.effort_level == 'somewhat_easy' %}
+                    <span class="badge badge-somewhat-easy badge-lg p-3">
+                        <i class="fas fa-meh-blank fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% elif ces_response.effort_level == 'neutral' %}
+                    <span class="badge badge-neutral badge-lg p-3">
+                        <i class="fas fa-meh fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% elif ces_response.effort_level == 'somewhat_difficult' %}
+                    <span class="badge badge-somewhat-difficult badge-lg p-3">
+                        <i class="fas fa-frown-open fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% elif ces_response.effort_level == 'difficult' %}
+                    <span class="badge badge-difficult badge-lg p-3">
+                        <i class="fas fa-frown fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% elif ces_response.effort_level == 'very_difficult' %}
+                    <span class="badge badge-very-difficult badge-lg p-3">
+                        <i class="fas fa-angry fa-2x"></i><br>
+                        {{ ces_response.get_effort_level_display }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Score Display -->
+                <div class="mb-3">
+                    <h2 class="display-4 {% if ces_response.normalized_score >= 80 %}text-success{% elif ces_response.normalized_score >= 60 %}text-primary{% elif ces_response.normalized_score >= 40 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ ces_response.score }}/{{ ces_response.scale_max }}
+                    </h2>
+                    <small class="text-muted">
+                        {% trans "Normalized:" %} {{ ces_response.normalized_score|floatformat:1 }}%
+                    </small>
+                </div>
+                
+                <!-- Score Progress Bar -->
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar effort-progress-bar" 
+                         style="width: {{ ces_response.normalized_score }}%"
+                         role="progressbar" 
+                         aria-valuenow="{{ ces_response.normalized_score }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ ces_response.normalized_score|floatformat:1 }}%
+                    </div>
+                </div>
+                
+                <!-- Score Details -->
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="small text-muted">{% trans "Scale" %}</div>
+                        <div class="font-weight-bold">1-{{ ces_response.scale_max }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted">{% trans "Effort Type" %}</div>
+                        <div>
+                            {% if ces_response.is_low_effort %}
+                            <span class="badge bg-success">{% trans "Low Effort" %}</span>
+                            {% elif ces_response.is_high_effort %}
+                            <span class="badge bg-danger">{% trans "High Effort" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning">{% trans "Neutral" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cog"></i> {% trans "Quick Actions" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-reply"></i> {% trans "Follow Up" %}
+                    </a>
+                    <a href="#" class="btn btn-success">
+                        <i class="fas fa-tag"></i> {% trans "Add Tag" %}
+                    </a>
+                    <a href="#" class="btn btn-info">
+                        <i class="fas fa-share"></i> {% trans "Share" %}
+                    </a>
+                    <a href="#" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> {% trans "Edit Response" %}
+                    </a>
+                    <a href="{% url 'surveys:ces-response-delete' organization.id ces_response.id %}" 
+                       class="btn btn-danger">
+                        <i class="fas fa-trash"></i> {% trans "Delete Response" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Metadata Card -->
+        {% if ces_response.metadata and ces_response.metadata.items %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> {% trans "Additional Metadata" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    {% for key, value in ces_response.metadata.items %}
+                        {% if key not in 'themes,keywords,emotion' %}
+                        <dt class="col-sm-5">{{ key|title }}</dt>
+                        <dd class="col-sm-7">
+                            {% if value|length > 50 %}
+                                <small>{{ value|truncatechars:50 }}</small>
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+                        </dd>
+                        {% endif %}
+                    {% endfor %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

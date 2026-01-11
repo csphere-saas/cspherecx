@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "NPS Responses" %}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br></section>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>{% trans "NPS Responses" %}
+                        </h4>
+                        <div class="btn-group">
+                            <a href="{% url 'surveys:nps-response-dashboard' organization_id=view.kwargs.organization_id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-chart-bar me-1"></i>{% trans "Dashboard" %}
+                            </a>
+                            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                                <i class="fas fa-filter me-1"></i>{% trans "Filter" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4 collapse" id="filterCollapse">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">{% trans "Category" %}</label>
+                            <select name="category" id="category" class="form-select">
+                                <option value="">{% trans "All Categories" %}</option>
+                                <option value="detractor" {% if current_filters.category == 'detractor' %}selected{% endif %}>
+                                    {% trans "Detractor (0-6)" %}
+                                </option>
+                                <option value="passive" {% if current_filters.category == 'passive' %}selected{% endif %}>
+                                    {% trans "Passive (7-8)" %}
+                                </option>
+                                <option value="promoter" {% if current_filters.category == 'promoter' %}selected{% endif %}>
+                                    {% trans "Promoter (9-10)" %}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="min_score" class="form-label">{% trans "Min Score" %}</label>
+                            <input type="number" name="min_score" id="min_score" class="form-control" 
+                                   min="0" max="10" value="{{ current_filters.min_score }}"
+                                   placeholder="{% trans '0' %}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="max_score" class="form-label">{% trans "Max Score" %}</label>
+                            <input type="number" name="max_score" id="max_score" class="form-control" 
+                                   min="0" max="10" value="{{ current_filters.max_score }}"
+                                   placeholder="{% trans '10' %}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="touchpoint" class="form-label">{% trans "Touchpoint" %}</label>
+                            <input type="text" name="touchpoint" id="touchpoint" class="form-control" 
+                                   value="{{ current_filters.touchpoint }}"
+                                   placeholder="{% trans 'Filter by touchpoint...' %}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="date_from" class="form-label">{% trans "From Date" %}</label>
+                            <input type="date" name="date_from" id="date_from" class="form-control" 
+                                   value="{{ current_filters.date_from }}">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="date_to" class="form-label">{% trans "To Date" %}</label>
+                            <input type="date" name="date_to" id="date_to" class="form-control" 
+                                   value="{{ current_filters.date_to }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">{% trans "Search" %}</label>
+                            <input type="text" name="search" id="search" class="form-control" 
+                                   value="{{ current_filters.search }}"
+                                   placeholder="{% trans 'Search by email, name, reason...' %}">
+                        </div>
+                        
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>{% trans "Apply Filters" %}
+                            </button>
+                            <a href="{% url 'surveys:nps-response-list' organization_id=view.kwargs.organization_id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>{% trans "Clear" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted">{% trans "Total" %}</h6>
+                    <div class="stat-value text-primary">{{ total_responses }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted">{% trans "Avg Score" %}</h6>
+                    <div class="stat-value text-info">{{ avg_score|floatformat:1 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted">{% trans "Promoters" %}</h6>
+                    <div class="stat-value text-success">{{ promoter_count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted">{% trans "Detractors" %}</h6>
+                    <div class="stat-value text-danger">{{ detractor_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NPS Score Card -->
+    {% if total_responses > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-uppercase text-muted">{% trans "Net Promoter Score" %}</h6>
+                    <div class="display-4 fw-bold 
+                        {% if nps_score >= 50 %}text-success
+                        {% elif nps_score >= 0 %}text-warning
+                        {% else %}text-danger{% endif %}">
+                        {{ nps_score }}
+                    </div>
+                    <div class="progress mt-3" style="height: 20px;">
+                        <div class="progress-bar bg-danger" style="width: {{ detractor_percentage }}%">
+                            {{ detractor_count }} {% trans "Detractors" %}
+                        </div>
+                        <div class="progress-bar bg-warning" style="width: {{ passive_percentage }}%">
+                            {{ passive_count }} {% trans "Passives" %}
+                        </div>
+                        <div class="progress-bar bg-success" style="width: {{ promoter_percentage }}%">
+                            {{ promoter_count }} {% trans "Promoters" %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Responses Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Customer" %}</th>
+                                    <th>{% trans "Score" %}</th>
+                                    <th>{% trans "Category" %}</th>
+                                    <th>{% trans "Reason" %}</th>
+                                    <th>{% trans "Touchpoint" %}</th>
+                                    <th>{% trans "Product" %}</th>
+                                    <th>{% trans "Date" %}</th>
+                                    <th>{% trans "Actions" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for response in responses %}
+                                <tr>
+                                    <td>
+                                        {% if response.customer %}
+                                        <a href="#" class="text-decoration-none" title="{{ response.customer.email }}">
+                                            {{ response.customer.email|truncatechars:25 }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">{% trans "No Customer" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="score-badge score-{{ response.score }}">
+                                            {{ response.score }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="category-tag {{ response.category }}-tag">
+                                            {{ response.get_category_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ response.reason|truncatechars:50|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ response.touchpoint|truncatechars:20|default:"-" }}</small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if response.product %}
+                                            {{ response.product.name|truncatechars:15 }}
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>{{ response.created_at|date:"M d, Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'surveys:nps-response-detail' organization_id=view.kwargs.organization_id pk=response.pk %}" 
+                                               class="btn btn-outline-info" 
+                                               title="{% trans 'View Details' %}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'surveys:nps-response-delete' organization_id=view.kwargs.organization_id pk=response.pk %}" 
+                                               class="btn btn-outline-danger" 
+                                               title="{% trans 'Delete' %}">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-3"></i><br>
+                                        {% trans "No NPS responses found" %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {% trans "Previous" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {% trans "Next" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    <div class="text-muted text-center mt-3">
+                        <small>
+                            {% blocktrans with count=paginator.count %}
+                            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ count }} responses
+                            {% endblocktrans %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .score-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-width: 36px;
+        text-align: center;
+    }
+    
+    .score-0, .score-1, .score-2, .score-3, .score-4, .score-5, .score-6 {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .score-7, .score-8 {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .score-9, .score-10 {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .category-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .promoter-tag { 
+        background-color: #d1fae5; 
+        color: #065f46; 
+        border: 1px solid #a7f3d0;
+    }
+    
+    .passive-tag { 
+        background-color: #fef3c7; 
+        color: #92400e; 
+        border: 1px solid #fde68a;
+    }
+    
+    .detractor-tag { 
+        background-color: #fee2e2; 
+        color: #991b1b; 
+        border: 1px solid #fecaca;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 15px;
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin: 5px 0;
+    }
+    
+    .progress-bar {
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-value {
+            font-size: 1.8rem;
+        }
+        
+        .score-badge, .category-tag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+        }
+        
+        .display-4 {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit score filters when both are filled
+    const minScore = document.getElementById('min_score');
+    const maxScore = document.getElementById('max_score');
+    
+    function checkScoreFilters() {
+        if (minScore.value && maxScore.value && minScore.value > maxScore.value) {
+            // Swap values if min > max
+            const temp = minScore.value;
+            minScore.value = maxScore.value;
+            maxScore.value = temp;
+        }
+    }
+    
+    if (minScore && maxScore) {
+        minScore.addEventListener('change', checkScoreFilters);
+        maxScore.addEventListener('change', checkScoreFilters);
+    }
+    
+    // Date validation
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    
+    function checkDateFilters() {
+        if (dateFrom.value && dateTo.value && dateFrom.value > dateTo.value) {
+            alert('{% trans "From date cannot be after To date" %}');
+            dateTo.value = dateFrom.value;
+        }
+    }
+    
+    if (dateFrom && dateTo) {
+        dateFrom.addEventListener('change', checkDateFilters);
+        dateTo.addEventListener('change', checkDateFilters);
+    }
+});
+</script>
+{% endblock %}

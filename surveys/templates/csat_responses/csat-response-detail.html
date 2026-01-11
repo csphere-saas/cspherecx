@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "CSAT Response Details" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p>
+    <br>
+</section>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-eye text-primary me-2"></i>{% trans "CSAT Response Details" %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'surveys:csat-response-list' organization.id %}" 
+           class="btn btn-sm btn-outline-primary me-2"
+           aria-label="{% trans 'Back to CSAT responses list' %}">
+            <i class="fas fa-arrow-left me-1"></i>{% trans "Back to List" %}
+        </a>
+        <a href="{% url 'surveys:csat-response-delete' organization.id csat_response.id %}" 
+           class="btn btn-sm btn-danger"
+           aria-label="{% trans 'Delete this CSAT response' %}">
+            <i class="fas fa-trash me-1"></i>{% trans "Delete" %}
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column - Main Info -->
+    <div class="col-lg-8">
+        <!-- Response Card -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-comment-dots me-2"></i>{% trans "Response Details" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold mb-2">
+                                {% trans "Question Asked" %}
+                            </label>
+                            <div class="feedback-text p-3 bg-light rounded border-start border-3 border-primary">
+                                {{ csat_response.question_text }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold mb-2">
+                                {% trans "Customer Feedback" %}
+                            </label>
+                            {% if csat_response.feedback_comment %}
+                            <div class="feedback-text p-3 bg-light rounded border-start border-3 border-info">
+                                {{ csat_response.feedback_comment|linebreaks }}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-light border" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <em>{% trans "No feedback provided" %}</em>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border mb-4">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold mb-2">
+                                        {% trans "Customer" %}
+                                    </label>
+                                    <p class="mb-2">
+                                        <i class="fas fa-user text-primary me-2"></i> 
+                                        {{ csat_response.customer.email|default:_("Unknown Customer") }}
+                                    </p>
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {% blocktrans with date=csat_response.created_at|date:"F j, Y" time=csat_response.created_at|time:"g:i a" %}
+                                        Submitted on {{ date }} at {{ time }}
+                                        {% endblocktrans %}
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold mb-2">
+                                        {% trans "Interaction Type" %}
+                                    </label>
+                                    <p class="mb-0">
+                                        <span class="badge bg-info text-white px-3 py-2">
+                                            {{ csat_response.get_interaction_type_display|default:_("N/A") }}
+                                        </span>
+                                    </p>
+                                </div>
+                                
+                                {% if csat_response.product %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold mb-2">
+                                        {% trans "Product" %}
+                                    </label>
+                                    <p class="mb-0">
+                                        <i class="fas fa-box me-2 text-secondary"></i>
+                                        {{ csat_response.product.name }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if csat_response.survey_response %}
+                                <div class="mb-0">
+                                    <label class="form-label text-muted small fw-bold mb-2">
+                                        {% trans "Linked Survey" %}
+                                    </label>
+                                    <p class="mb-0">
+                                        <a href="#" class="text-decoration-none text-primary">
+                                            <i class="fas fa-external-link-alt me-2"></i>
+                                            {% trans "View Survey Response" %}
+                                        </a>
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Analysis Card -->
+        {% if csat_response.ai_analyzed %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-robot me-2"></i>{% trans "AI Analysis" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center g-4">
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <label class="form-label text-muted small fw-bold mb-3">
+                                {% trans "Sentiment Score" %}
+                            </label>
+                            <div class="display-4 fw-bold mb-2 
+                                {% if csat_response.sentiment_score > 0.3 %}text-success
+                                {% elif csat_response.sentiment_score < -0.3 %}text-danger
+                                {% else %}text-warning{% endif %}">
+                                {{ csat_response.sentiment_score|floatformat:2 }}
+                            </div>
+                            <small class="text-muted d-block">
+                                {% trans "Range: -1.0 to 1.0" %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <div class="ps-md-3 border-start-md">
+                            <label class="form-label text-muted small fw-bold mb-3">
+                                {% trans "Analysis Details" %}
+                            </label>
+                            
+                            {% if csat_response.metadata %}
+                                {% if csat_response.metadata.themes %}
+                                <div class="mb-4">
+                                    <strong class="d-block mb-2">{% trans "Themes:" %}</strong>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for theme in csat_response.metadata.themes %}
+                                        <span class="badge bg-secondary px-3 py-2">
+                                            {{ theme }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if csat_response.metadata.keywords %}
+                                <div class="mb-4">
+                                    <strong class="d-block mb-2">{% trans "Keywords:" %}</strong>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for keyword in csat_response.metadata.keywords %}
+                                        <span class="badge bg-light text-dark border px-3 py-2">
+                                            {{ keyword }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if csat_response.metadata.emotion %}
+                                <div class="mb-0">
+                                    <strong class="d-block mb-2">{% trans "Emotion:" %}</strong>
+                                    <span class="badge 
+                                        {% if csat_response.metadata.emotion == 'positive' %}bg-success
+                                        {% elif csat_response.metadata.emotion == 'negative' %}bg-danger
+                                        {% else %}bg-warning text-dark{% endif %} 
+                                        px-3 py-2">
+                                        {{ csat_response.metadata.emotion|title }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-light border" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans "No additional analysis metadata available." %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Right Column - Score & Actions -->
+    <div class="col-lg-4">
+        <!-- Score Card -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-chart-bar me-2"></i>{% trans "CSAT Score" %}
+                </h6>
+            </div>
+            <div class="card-body text-center p-4">
+                <!-- Satisfaction Badge -->
+                <div class="mb-4">
+                    {% if csat_response.satisfaction_level == 'very_satisfied' %}
+                    <span class="badge badge-very-satisfied badge-lg p-3 rounded-pill">
+                        <i class="fas fa-grin-stars fa-2x d-block mb-2"></i>
+                        {{ csat_response.get_satisfaction_level_display }}
+                    </span>
+                    {% elif csat_response.satisfaction_level == 'satisfied' %}
+                    <span class="badge badge-satisfied badge-lg p-3 rounded-pill">
+                        <i class="fas fa-smile fa-2x d-block mb-2"></i>
+                        {{ csat_response.get_satisfaction_level_display }}
+                    </span>
+                    {% elif csat_response.satisfaction_level == 'neutral' %}
+                    <span class="badge badge-neutral badge-lg p-3 rounded-pill">
+                        <i class="fas fa-meh fa-2x d-block mb-2"></i>
+                        {{ csat_response.get_satisfaction_level_display }}
+                    </span>
+                    {% elif csat_response.satisfaction_level == 'dissatisfied' %}
+                    <span class="badge badge-dissatisfied badge-lg p-3 rounded-pill">
+                        <i class="fas fa-frown fa-2x d-block mb-2"></i>
+                        {{ csat_response.get_satisfaction_level_display }}
+                    </span>
+                    {% elif csat_response.satisfaction_level == 'very_dissatisfied' %}
+                    <span class="badge badge-very-dissatisfied badge-lg p-3 rounded-pill">
+                        <i class="fas fa-angry fa-2x d-block mb-2"></i>
+                        {{ csat_response.get_satisfaction_level_display }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Score Display -->
+                <div class="mb-4">
+                    <h2 class="display-4 fw-bold mb-2 
+                        {% if csat_response.normalized_score >= 80 %}text-success
+                        {% elif csat_response.normalized_score >= 60 %}text-primary
+                        {% elif csat_response.normalized_score >= 40 %}text-warning
+                        {% else %}text-danger{% endif %}">
+                        {{ csat_response.score }}/{{ csat_response.scale_max }}
+                    </h2>
+                    <small class="text-muted d-block">
+                        {% trans "Normalized:" %} {{ csat_response.normalized_score|floatformat:1 }}%
+                    </small>
+                </div>
+                
+                <!-- Score Progress Bar -->
+                <div class="progress mb-4" style="height: 25px;" role="progressbar" 
+                     aria-valuenow="{{ csat_response.normalized_score }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    <div class="progress-bar fw-bold 
+                        {% if csat_response.normalized_score >= 80 %}bg-success
+                        {% elif csat_response.normalized_score >= 60 %}bg-primary
+                        {% elif csat_response.normalized_score >= 40 %}bg-warning
+                        {% else %}bg-danger{% endif %}" 
+                         style="width: {{ csat_response.normalized_score }}%">
+                        {{ csat_response.normalized_score|floatformat:1 }}%
+                    </div>
+                </div>
+                
+                <!-- Score Details -->
+                <div class="row text-center g-3">
+                    <div class="col-6">
+                        <div class="small text-muted mb-1">{% trans "Scale" %}</div>
+                        <div class="fw-bold">1-{{ csat_response.scale_max }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted mb-1">{% trans "Response Type" %}</div>
+                        <div>
+                            {% if csat_response.is_positive %}
+                            <span class="badge bg-success px-3 py-2">{% trans "Positive" %}</span>
+                            {% elif csat_response.is_negative %}
+                            <span class="badge bg-danger px-3 py-2">{% trans "Negative" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning px-3 py-2 text-dark">{% trans "Neutral" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions Card -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-cog me-2"></i>{% trans "Quick Actions" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="#" class="btn btn-primary btn-lg" role="button">
+                        <i class="fas fa-reply me-2"></i>{% trans "Follow Up" %}
+                    </a>
+                    <a href="#" class="btn btn-success btn-lg" role="button">
+                        <i class="fas fa-tag me-2"></i>{% trans "Add Tag" %}
+                    </a>
+                    <a href="#" class="btn btn-info btn-lg" role="button">
+                        <i class="fas fa-share me-2"></i>{% trans "Share" %}
+                    </a>
+                    <a href="#" class="btn btn-warning btn-lg" role="button">
+                        <i class="fas fa-edit me-2"></i>{% trans "Edit Response" %}
+                    </a>
+                    <a href="{% url 'surveys:csat-response-delete' organization.id csat_response.id %}" 
+                       class="btn btn-danger btn-lg" 
+                       role="button"
+                       aria-label="{% trans 'Delete this CSAT response' %}">
+                        <i class="fas fa-trash me-2"></i>{% trans "Delete Response" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Metadata Card -->
+        {% if csat_response.metadata and csat_response.metadata.items %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-info-circle me-2"></i>{% trans "Additional Metadata" %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <dl class="row g-3 mb-0">
+                    {% for key, value in csat_response.metadata.items %}
+                        {% if key not in 'themes,keywords,emotion' %}
+                        <dt class="col-sm-5 small text-muted fw-normal">
+                            {{ key|title }}
+                        </dt>
+                        <dd class="col-sm-7">
+                            <div class="text-break">
+                                {% if value|length > 50 %}
+                                    <small>{{ value|truncatechars:50 }}</small>
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </div>
+                        </dd>
+                        {% endif %}
+                    {% endfor %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Add custom styles for satisfaction badges */
+.badge-very-satisfied {
+    background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+    color: white;
+    border: none;
+}
+
+.badge-satisfied {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+    border: none;
+}
+
+.badge-neutral {
+    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+    color: #333;
+    border: none;
+}
+
+.badge-dissatisfied {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #333;
+    border: none;
+}
+
+.badge-very-dissatisfied {
+    background: linear-gradient(135deg, #e74a3b 0%, #d52a1e 100%);
+    color: white;
+    border: none;
+}
+
+.badge-lg {
+    font-size: 1.1rem;
+    padding: 0.75rem 1.5rem;
+}
+
+.feedback-text {
+    background-color: #f8f9fa;
+    border-left: 4px solid;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    line-height: 1.6;
+}
+
+.card {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.5rem;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .badge-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .btn-toolbar {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+</style>
+{% endblock %}

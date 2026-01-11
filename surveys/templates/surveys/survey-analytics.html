@@ -1,0 +1,1335 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Survey Analytics" %} - {{ survey.title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5"><p></p><br>
+    <div class="container-fluid">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h1 class="mb-2"><i class="bi bi-graph-up me-2"></i>{% trans "Survey Analytics" %}</h1>
+                <p class="text-muted mb-0">
+                    {% blocktrans with survey_title=survey.title %}Performance insights for "{{ survey_title }}"{% endblocktrans %}
+                </p>
+            </div>
+            <div class="btn-group flex-wrap">
+                <a href="{% url 'surveys:survey-detail' organization_pk=organization.pk pk=survey.pk %}" 
+                   class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i> {% trans "Back to Survey" %}
+                </a>
+                <a href="{% url 'surveys:survey-list' organization_pk=organization.pk %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-list me-1"></i> {% trans "All Surveys" %}
+                </a>
+            </div>
+        </div>
+
+        <!-- Survey Status & Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8 mb-3 mb-md-0">
+                                <h4 class="card-title mb-1">{{ survey.title }}</h4>
+                                {% if survey.description %}
+                                    <p class="text-muted mb-2">{{ survey.description }}</p>
+                                {% endif %}
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge bg-{% if survey.status == 'active' %}success{% elif survey.status == 'draft' %}secondary{% else %}warning{% endif %}">
+                                        {{ survey.get_status_display }}
+                                    </span>
+                                    <span class="badge bg-info">{{ survey.get_survey_type_display }}</span>
+                                    <span class="badge bg-light text-dark">
+                                        <i class="bi bi-translate me-1"></i>{{ survey.get_language_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <div class="text-muted small">
+                                    <div>{% trans "Created" %}: {{ survey.created|date:"M d, Y" }}</div>
+                                    <div>{% trans "Active for" %}: {{ survey_duration_days }} {% trans "days" %}</div>
+                                    {% if survey.start_date %}
+                                        <div>{% trans "Started" %}: {{ survey.start_date|date:"M d, Y" }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="card-title display-6">{{ total_responses }}</h2>
+                                <p class="card-text mb-0">{% trans "Total Responses" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-people-fill fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="opacity-75">
+                                <i class="bi bi-calendar me-1"></i>
+                                {{ avg_daily_responses }} {% trans "avg/day" %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="card-title display-6">{{ completion_rate|default:0|floatformat:1 }}%</h2>
+                                <p class="card-text mb-0">{% trans "Completion Rate" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-check-circle-fill fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="opacity-75">
+                                {% if survey.total_sent > 0 %}
+                                    {{ total_responses }} / {{ survey.total_sent }} {% trans "respondents" %}
+                                {% else %}
+                                    {% trans "No surveys sent yet" %}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="card-title display-6">{{ question_count }}</h2>
+                                <p class="card-text mb-0">{% trans "Questions" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-question-circle-fill fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="opacity-75">
+                                {{ required_questions }} {% trans "required" %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="card-title display-6">
+                                    {% if avg_completion_minutes %}
+                                        {{ avg_completion_minutes }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </h2>
+                                <p class="card-text mb-0">{% trans "Avg. Time (min)" %}</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-clock-fill fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="opacity-75">
+                                {% trans "Average completion time" %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column - Charts & Trends -->
+            <div class="col-lg-8 mb-4">
+                <!-- Response Trends Chart -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bar-chart-line me-2"></i>{% trans "Response Trends (Last 30 Days)" %}
+                        </h5>
+                        <span class="badge bg-light text-dark mt-2 mt-sm-0">
+                            <i class="bi bi-clock me-1"></i> {% trans "Daily" %}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        {% if response_trends and total_responses > 0 %}
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="responseTrendsChart"></canvas>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {% trans "Shows daily response counts for the past 30 days" %}
+                                </small>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-bar-chart fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">{% trans "No Response Data Yet" %}</h5>
+                                <p class="text-muted mb-4">{% trans "Share your survey to start collecting responses and see trends here." %}</p>
+                                {% if survey.status == 'active' %}
+                                    <a href="{% url 'surveys:survey-detail' organization_pk=organization.pk pk=survey.pk %}" 
+                                       class="btn btn-primary">
+                                        <i class="bi bi-link me-1"></i> {% trans "Get Survey Link" %}
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Survey Type Specific Metrics -->
+                {% if csat_metrics or nps_metrics %}
+                <div class="row">
+                    {% if csat_metrics %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-emoji-smile me-2"></i>{% trans "CSAT Score" %}
+                                </h5>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="display-2 fw-bold text-success mb-2">{{ csat_metrics.avg_score }}</div>
+                                <p class="text-muted mb-3">{% trans "out of 10" %}</p>
+                                <div class="progress mb-3" style="height: 20px;">
+                                    <div class="progress-bar bg-success" 
+                                         style="width: {% widthratio csat_metrics.avg_score 10 100 %}%">
+                                    </div>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="text-success fw-bold">{{ csat_metrics.promoters }}</div>
+                                        <small class="text-muted">{% trans "Promoters" %}</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-warning fw-bold">{{ csat_metrics.passives }}</div>
+                                        <small class="text-muted">{% trans "Passives" %}</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-danger fw-bold">{{ csat_metrics.detractors }}</div>
+                                        <small class="text-muted">{% trans "Detractors" %}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if nps_metrics %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-graph-up me-2"></i>{% trans "NPS Score" %}
+                                </h5>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="display-2 fw-bold 
+                                    {% if nps_metrics.nps_score > 50 %}text-success
+                                    {% elif nps_metrics.nps_score > 0 %}text-warning
+                                    {% else %}text-danger{% endif %} mb-2">
+                                    {{ nps_metrics.nps_score }}
+                                </div>
+                                <p class="text-muted mb-3">{% trans "Net Promoter Score" %}</p>
+                                <div class="progress mb-3" style="height: 20px;">
+                                    <div class="progress-bar 
+                                        {% if nps_metrics.nps_score > 50 %}bg-success
+                                        {% elif nps_metrics.nps_score > 0 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                         style="width: {% widthratio nps_metrics.nps_score|add:100 200 100 %}%">
+                                    </div>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="text-success fw-bold">{{ nps_metrics.promoters }}</div>
+                                        <small class="text-muted">{% trans "Promoters" %}</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-warning fw-bold">{{ nps_metrics.passives }}</div>
+                                        <small class="text-muted">{% trans "Passives" %}</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-danger fw-bold">{{ nps_metrics.detractors }}</div>
+                                        <small class="text-muted">{% trans "Detractors" %}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Device Breakdown -->
+                {% if device_breakdown and total_responses > 0 %}
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-laptop me-2"></i>{% trans "Device Breakdown" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for device in device_breakdown %}
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                    <div>
+                                        <h6 class="mb-0">
+                                            {% if device.device_type == 'mobile' or device.device_type == 'phone' %}
+                                                <i class="bi bi-phone me-2"></i>
+                                            {% elif device.device_type == 'tablet' %}
+                                                <i class="bi bi-tablet me-2"></i>
+                                            {% elif device.device_type == 'desktop' %}
+                                                <i class="bi bi-laptop me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-question-circle me-2"></i>
+                                            {% endif %}
+                                            {{ device.device_type|title|default:"Unknown" }}
+                                        </h6>
+                                    </div>
+                                    <div class="text-end">
+                                        <h4 class="mb-0">{{ device.count }}</h4>
+                                        <small class="text-muted">
+                                            {% if total_responses > 0 %}
+                                                {% widthratio device.count total_responses 100 %}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Question Overview -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-question-square me-2"></i>{% trans "Question Overview" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if questions and question_count > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for question in questions %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto w-75">
+                                            <div class="fw-bold mb-1">{{ question.text|default:"Untitled Question" }}</div>
+                                            <small class="text-muted">
+                                                {% trans "Type" %}: <span class="badge bg-secondary">{{ question.type|default:"text"|title }}</span>
+                                                {% if question.required %}
+                                                    <span class="badge bg-warning ms-1">{% trans "Required" %}</span>
+                                                {% endif %}
+                                            </small>
+                                            {% if question.options %}
+                                                <div class="mt-2">
+                                                    <small class="text-muted">
+                                                        {% trans "Options" %}: 
+                                                        {% for option in question.options|slice:":3" %}
+                                                            <span class="badge bg-light text-dark me-1">{{ option }}</span>
+                                                        {% endfor %}
+                                                        {% if question.options|length > 3 %}
+                                                            <span class="badge bg-secondary">+{{ question.options|length|add:"-3" }} {% trans "more" %}</span>
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-primary rounded-pill">#{{ forloop.counter }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-question-circle fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{% trans "No questions configured for this survey." %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Additional Analytics -->
+            <div class="col-lg-4 mb-4">
+                <!-- Completion Progress -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-speedometer me-2"></i>{% trans "Response Status" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if survey.total_sent > 0 %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">{% trans "Completion Progress" %}</span>
+                                    <span class="text-muted">{{ total_responses }} / {{ survey.total_sent }}</span>
+                                </div>
+                                <div class="progress" style="height: 12px;">
+                                    <div class="progress-bar bg-success" 
+                                         role="progressbar" 
+                                         style="width: {% widthratio total_responses survey.total_sent 100 %}%"
+                                         aria-valuenow="{% widthratio total_responses survey.total_sent 100 %}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row text-center">
+                                <div class="col-4 border-end">
+                                    <h5 class="text-success mb-0">{{ total_responses }}</h5>
+                                    <small class="text-muted">{% trans "Completed" %}</small>
+                                </div>
+                                <div class="col-4 border-end">
+                                    <h5 class="text-warning mb-0">{{ incomplete_responses|default:0 }}</h5>
+                                    <small class="text-muted">{% trans "In Progress" %}</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5 class="text-secondary mb-0">{{ response_rate_data.not_started|default:0 }}</h5>
+                                    <small class="text-muted">{% trans "Not Started" %}</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="bi bi-envelope fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">{% trans "No surveys sent yet" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Sentiment Analysis -->
+                {% if has_sentiment_data and total_responses > 0 %}
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-emoji-heart-eyes me-2"></i>{% trans "Sentiment Analysis" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="display-4 fw-bold 
+                                {% if avg_sentiment >= 0.5 %}text-success
+                                {% elif avg_sentiment <= -0.5 %}text-danger
+                                {% else %}text-warning{% endif %}">
+                                {{ avg_sentiment }}
+                            </div>
+                            <p class="text-muted mb-0">{% trans "Average Sentiment Score" %}</p>
+                        </div>
+                        
+                        <div class="mt-3">
+                            {% for type, count in sentiment_distribution.items %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">{{ type|title }}</span>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">{{ count }}</span>
+                                    <div class="progress flex-grow-1" style="width: 100px; height: 8px;">
+                                        <div class="progress-bar 
+                                            {% if type == 'positive' %}bg-success
+                                            {% elif type == 'neutral' %}bg-warning
+                                            {% else %}bg-danger{% endif %}" 
+                                             style="width: {% if total_responses > 0 %}{% widthratio count total_responses 100 %}%{% else %}0%{% endif %}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Recent Responses -->
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clock-history me-2"></i>{% trans "Recent Responses" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if responses and total_responses > 0 %}
+                            <div class="timeline">
+                                {% for response in responses %}
+                                    <div class="timeline-item mb-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong class="d-block">
+                                                    {% if response.customer and response.customer.get_full_name %}
+                                                        {{ response.customer.get_full_name|truncatechars:20 }}
+                                                    {% elif response.customer and response.customer.email %}
+                                                        {{ response.customer.email|truncatechars:20 }}
+                                                    {% else %}
+                                                        {% trans "Anonymous" %}
+                                                    {% endif %}
+                                                </strong>
+                                                <small class="text-muted">
+                                                    {{ response.created_at|timesince }} {% trans "ago" %}
+                                                </small>
+                                                {% if response.sentiment_score %}
+                                                <div class="mt-1">
+                                                    <span class="badge 
+                                                        {% if response.sentiment_score >= 0.5 %}bg-success
+                                                        {% elif response.sentiment_score <= -0.5 %}bg-danger
+                                                        {% else %}bg-warning{% endif %}">
+                                                        {{ response.sentiment_score|floatformat:1 }}
+                                                    </span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-muted d-block">
+                                                    {{ response.created_at|date:"H:i" }}
+                                                </small>
+                                                {% if response.device_type %}
+                                                <small class="text-muted">
+                                                    <i class="bi bi-{% if response.device_type == 'mobile' %}phone{% elif response.device_type == 'tablet' %}tablet{% else %}laptop{% endif %}"></i>
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if total_responses > 10 %}
+                                <div class="text-center mt-3">
+                                    <small class="text-muted">
+                                        {% trans "Showing 10 of" %} {{ total_responses }} {% trans "responses" %}
+                                    </small>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="bi bi-inbox fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">{% trans "No responses yet" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-download me-2"></i>{% trans "Export Data" %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if total_responses > 0 %}
+                            <!-- Export Modal Trigger -->
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exportModal">
+                                    <i class="bi bi-download me-2"></i>
+                                    {% trans "Export Survey Data" %}
+                                </button>
+                                <a href="{% url 'surveys:export-survey-report' organization_pk=organization.pk pk=survey.pk %}" 
+                                   class="btn btn-outline-info" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>
+                                    {% trans "Download Summary PDF" %}
+                                </a>
+                            </div>
+                            
+                            <!-- Quick Export Stats -->
+                            <div class="mt-3">
+                                <div class="alert alert-info py-2 mb-2">
+                                    <small class="d-flex align-items-center">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        {% trans "Ready to export" %}: {{ total_responses }} {% trans "responses" %}
+                                    </small>
+                                </div>
+                                <div class="text-center">
+                                    <small class="text-muted">
+                                        {% trans "Last exported" %}: 
+                                        {% if survey.last_exported %}
+                                            {{ survey.last_exported|date:"M d, Y H:i" }}
+                                        {% else %}
+                                            {% trans "Never" %}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="bi bi-inbox fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">{% trans "No data to export yet" %}</p>
+                                <small class="text-muted">
+                                    {% trans "Collect responses first to enable export features" %}
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Export Modal -->
+{% if total_responses > 0 %}
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="bi bi-download me-2"></i>{% trans "Export Survey Data" %}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm" method="post" action="{% url 'surveys:export-survey-report' organization_pk=organization.pk pk=survey.pk %}">
+                    {% csrf_token %}
+                    
+                    <!-- Export Format Selection -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">{% trans "Select Export Format" %}</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check card-option">
+                                    <input class="form-check-input" type="radio" name="export_format" id="formatCsv" value="csv" checked>
+                                    <label class="form-check-label w-100" for="formatCsv">
+                                        <div class="card border p-3 text-center h-100">
+                                            <i class="bi bi-file-earmark-spreadsheet text-primary fa-2x mb-2"></i>
+                                            <h6>CSV</h6>
+                                            <small class="text-muted">{% trans "Spreadsheet format" %}</small>
+                                            <div class="mt-2">
+                                                <span class="badge bg-success">Excel</span>
+                                                <span class="badge bg-info">Google Sheets</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check card-option">
+                                    <input class="form-check-input" type="radio" name="export_format" id="formatJson" value="json">
+                                    <label class="form-check-label w-100" for="formatJson">
+                                        <div class="card border p-3 text-center h-100">
+                                            <i class="bi bi-code-slash text-warning fa-2x mb-2"></i>
+                                            <h6>JSON</h6>
+                                            <small class="text-muted">{% trans "API/Development" %}</small>
+                                            <div class="mt-2">
+                                                <span class="badge bg-dark">API</span>
+                                                <span class="badge bg-secondary">Database</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check card-option">
+                                    <input class="form-check-input" type="radio" name="export_format" id="formatExcel" value="xlsx">
+                                    <label class="form-check-label w-100" for="formatExcel">
+                                        <div class="card border p-3 text-center h-100">
+                                            <i class="bi bi-file-earmark-excel text-success fa-2x mb-2"></i>
+                                            <h6>Excel</h6>
+                                            <small class="text-muted">{% trans "Advanced formatting" %}</small>
+                                            <div class="mt-2">
+                                                <span class="badge bg-success">Charts</span>
+                                                <span class="badge bg-info">Formulas</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Options -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">{% trans "Data Options" %}</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{% trans "Date Range" %}</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" name="start_date" value="{{ survey.start_date|date:'Y-m-d' }}">
+                                    <span class="input-group-text">{% trans "to" %}</span>
+                                    <input type="date" class="form-control" name="end_date" value="{% now 'Y-m-d' %}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{% trans "Response Status" %}</label>
+                                <select class="form-select" name="response_status">
+                                    <option value="all" selected>{% trans "All Responses" %}</option>
+                                    <option value="completed">{% trans "Completed Only" %}</option>
+                                    <option value="incomplete">{% trans "Incomplete Only" %}</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_metadata" id="includeMetadata" checked>
+                            <label class="form-check-label" for="includeMetadata">
+                                {% trans "Include survey metadata (questions, settings)" %}
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_timestamps" id="includeTimestamps" checked>
+                            <label class="form-check-label" for="includeTimestamps">
+                                {% trans "Include response timestamps" %}
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_sentiment" id="includeSentiment" checked>
+                            <label class="form-check-label" for="includeSentiment">
+                                {% trans "Include sentiment analysis scores" %}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="anonymize_data" id="anonymizeData">
+                            <label class="form-check-label" for="anonymizeData">
+                                {% trans "Anonymize respondent data" %}
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options -->
+                    <div class="accordion mb-4" id="advancedOptions">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced">
+                                    <i class="bi bi-gear me-2"></i>{% trans "Advanced Options" %}
+                                </button>
+                            </h2>
+                            <div id="collapseAdvanced" class="accordion-collapse collapse" data-bs-parent="#advancedOptions">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">{% trans "File Encoding" %}</label>
+                                            <select class="form-select" name="encoding">
+                                                <option value="utf-8" selected>UTF-8 (Recommended)</option>
+                                                <option value="windows-1252">Windows-1252</option>
+                                                <option value="iso-8859-1">ISO-8859-1</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">{% trans "CSV Delimiter" %}</label>
+                                            <select class="form-select" name="delimiter">
+                                                <option value="," selected>Comma (,) - Standard</option>
+                                                <option value=";">Semicolon (;) - European</option>
+                                                <option value="\t">Tab - TSV Format</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">{% trans "Custom Filename" %}</label>
+                                        <input type="text" class="form-control" name="custom_filename" 
+                                               placeholder="e.g., survey-responses-{% now 'Y-m-d' %}"
+                                               value="survey-{{ survey.pk }}-responses-{% now 'Y-m-d' %}">
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="compress_file" id="compressFile">
+                                        <label class="form-check-label" for="compressFile">
+                                            {% trans "Compress file (ZIP)" %}
+                                        </label>
+                                        <small class="text-muted d-block">{% trans "Recommended for large datasets" %}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export Progress -->
+                    <div id="exportProgress" class="d-none">
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-3" role="status"></div>
+                                <div class="flex-grow-1">
+                                    <strong>{% trans "Preparing your export..." %}</strong>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export Summary -->
+                    <div class="alert alert-success" id="exportSummary">
+                        <h6><i class="bi bi-check-circle me-2"></i>{% trans "Export Summary" %}</h6>
+                        <div class="row small">
+                            <div class="col-md-4">
+                                <strong>{% trans "Format:" %}</strong> <span id="summaryFormat">CSV</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{% trans "Responses:" %}</strong> <span id="summaryCount">{{ total_responses }}</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{% trans "Size:" %}</strong> <span id="summarySize">~{{ total_responses|add:"10" }} KB</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="submit" form="exportForm" class="btn btn-primary" id="exportSubmitBtn">
+                    <i class="bi bi-download me-2"></i>{% trans "Start Export" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if response_trends and total_responses > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Response Trends Chart
+    const trendsCanvas = document.getElementById('responseTrendsChart');
+    if (trendsCanvas) {
+        const trendsCtx = trendsCanvas.getContext('2d');
+        const responseTrends = {{ response_trends|safe }};
+        
+        // Format dates for display
+        const dates = responseTrends.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        });
+        
+        const counts = responseTrends.map(item => item.count);
+        
+        // Calculate stats for the chart
+        const maxCount = Math.max(...counts);
+        const suggestedMax = maxCount < 10 ? 10 : Math.ceil(maxCount * 1.1);
+        
+        // Create chart
+        new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '{% trans "Daily Responses" %}',
+                    data: counts,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#007bff',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const date = new Date(responseTrends[tooltipItems[0].dataIndex].date);
+                                return date.toLocaleDateString('en-US', { 
+                                    weekday: 'long',
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                });
+                            },
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: suggestedMax,
+                        ticks: {
+                            stepSize: Math.max(1, Math.ceil(suggestedMax / 5))
+                        },
+                        title: {
+                            display: true,
+                            text: '{% trans "Number of Responses" %}',
+                            color: '#666',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '{% trans "Date" %}',
+                            color: '#666',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'nearest'
+                }
+            }
+        });
+    }
+    
+    // Export Modal Functionality
+    const exportModal = document.getElementById('exportModal');
+    if (exportModal) {
+        const exportForm = document.getElementById('exportForm');
+        const exportSubmitBtn = document.getElementById('exportSubmitBtn');
+        const exportProgress = document.getElementById('exportProgress');
+        const formatRadios = document.querySelectorAll('input[name="export_format"]');
+        
+        // Update export summary based on format selection
+        formatRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const format = this.value;
+                document.getElementById('summaryFormat').textContent = format.toUpperCase();
+                
+                // Estimate file size based on format
+                const responseCount = {{ total_responses }};
+                let estimatedSize = responseCount * 2; // Base size in KB
+                
+                if (format === 'json') estimatedSize = Math.round(estimatedSize * 1.5);
+                if (format === 'xlsx') estimatedSize = Math.round(estimatedSize * 1.2);
+                
+                document.getElementById('summarySize').textContent = `~${estimatedSize} KB`;
+            });
+        });
+        
+        // Handle export form submission
+        exportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show progress indicator
+            exportProgress.classList.remove('d-none');
+            exportSubmitBtn.disabled = true;
+            exportSubmitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> {% trans "Processing..." %}';
+            
+            // Get form data
+            const formData = new FormData(this);
+            
+            // Submit via AJAX
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Create download link
+                    const link = document.createElement('a');
+                    link.href = data.download_url;
+                    link.download = data.filename || `survey-export-{% now "Y-m-d-H-i" %}.${formData.get('export_format')}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Show success message
+                    showToast('{% trans "Export completed successfully!" %}', 'success');
+                    
+                    // Close modal after delay
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(exportModal).hide();
+                        exportProgress.classList.add('d-none');
+                        exportSubmitBtn.disabled = false;
+                        exportSubmitBtn.innerHTML = '<i class="bi bi-download me-2"></i> {% trans "Start Export" %}';
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Export failed');
+                }
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                showToast(`{% trans "Export failed:" %} ${error.message}`, 'danger');
+                exportProgress.classList.add('d-none');
+                exportSubmitBtn.disabled = false;
+                exportSubmitBtn.innerHTML = '<i class="bi bi-download me-2"></i> {% trans "Start Export" %}';
+            });
+        });
+        
+        // Card option styling
+        document.querySelectorAll('.card-option').forEach(card => {
+            const input = card.querySelector('input[type="radio"]');
+            const label = card.querySelector('.card');
+            
+            input.addEventListener('change', function() {
+                document.querySelectorAll('.card-option .card').forEach(c => {
+                    c.classList.remove('border-primary', 'bg-primary-light');
+                });
+                
+                if (this.checked) {
+                    label.classList.add('border-primary', 'bg-primary-light');
+                }
+            });
+            
+            // Initialize selected card
+            if (input.checked) {
+                label.classList.add('border-primary', 'bg-primary-light');
+            }
+            
+            // Make entire card clickable
+            label.addEventListener('click', function(e) {
+                if (!input.checked) {
+                    input.checked = true;
+                    input.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    }
+    
+    // Helper function to show toast notifications
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
+        toast.style.zIndex = '1060';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', function() {
+            document.body.removeChild(toast);
+        });
+    }
+});
+
+// Additional UI enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href !== '#') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    });
+    
+    // Enhance card hover effects
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 0.125rem 0.25rem rgba(0,0,0,0.075)';
+        });
+    });
+    
+    // Animate progress bars on scroll
+    const progressBars = document.querySelectorAll('.progress-bar');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const bar = entry.target;
+                const width = bar.style.width;
+                bar.style.transition = 'width 1.5s ease-in-out';
+                bar.style.width = '0%';
+                
+                // Animate to full width
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+                
+                // Stop observing after animation
+                observer.unobserve(bar);
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    progressBars.forEach(bar => observer.observe(bar));
+    
+    // Add copy survey ID functionality
+    const copySurveyId = document.createElement('button');
+    copySurveyId.className = 'btn btn-sm btn-outline-secondary ms-2';
+    copySurveyId.innerHTML = '<i class="bi bi-clipboard"></i>';
+    copySurveyId.title = '{% trans "Copy Survey ID" %}';
+    copySurveyId.addEventListener('click', function() {
+        const surveyId = '{{ survey.pk }}';
+        navigator.clipboard.writeText(surveyId).then(() => {
+            showToast('{% trans "Survey ID copied to clipboard!" %}');
+        });
+    });
+    
+    // Add to header if there's a place for it
+    const headerTitle = document.querySelector('.card-title');
+    if (headerTitle) {
+        headerTitle.parentNode.appendChild(copySurveyId);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.display-6 {
+    font-size: 2.5rem;
+    font-weight: 300;
+}
+
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+.timeline-item {
+    border-left: 3px solid #007bff;
+    padding-left: 1rem;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.timeline-item:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-left-color: #0056b3;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #007bff;
+    transition: all 0.2s ease;
+}
+
+.timeline-item:hover:before {
+    background: #0056b3;
+    transform: scale(1.2);
+}
+
+.chart-container {
+    position: relative;
+}
+
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+/* Export Modal Styles */
+.card-option .card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card-option .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card-option input:checked + .card {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.bg-primary-light {
+    background-color: rgba(13, 110, 253, 0.05) !important;
+}
+
+/* Export Summary */
+#exportSummary {
+    background-color: rgba(25, 135, 84, 0.1);
+    border-color: rgba(25, 135, 84, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .display-6 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    #exportModal .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .display-6 {
+        font-size: 1.75rem;
+    }
+    
+    .card-header h5 {
+        font-size: 1rem;
+    }
+    
+    .timeline-item {
+        padding-left: 0.75rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    #exportModal .modal-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .display-6 {
+        font-size: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .card-option .col-md-4 {
+        width: 100%;
+    }
+}
+
+/* Print styles */
+@media print {
+    .btn-group, .export-btn, .no-print, #exportModal, .modal {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .timeline-item {
+        border-left: 2px solid #333;
+    }
+    
+    .chart-container {
+        page-break-inside: avoid;
+    }
+    
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+    
+    .alert, .badge {
+        border: 1px solid #000 !important;
+        color: #000 !important;
+        background-color: transparent !important;
+    }
+}
+</style>
+{% endblock %}
