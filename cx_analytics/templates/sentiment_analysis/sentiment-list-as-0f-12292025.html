@@ -1,0 +1,1332 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    {{ page_title }}
+                </h1>
+                <div>
+                    <a href="{% url 'cx_analytics:sentiment-dashboard' organization.pk %}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        {% trans "View Dashboard" %}
+                    </a>
+                </div>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-detail' organization.pk %}">
+                            {% trans "Organization" %}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% trans "Sentiment Analysis" %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {% trans "Total Feedbacks" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_feedbacks }}</div>
+                            <div class="text-xs text-muted mt-1">
+                                {% trans "All collected feedback" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                {% trans "Analyzed" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ analyzed_count }}</div>
+                            <div class="text-xs text-muted mt-1">
+                                {% trans "AI processed" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-robot fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {% trans "Needs Review" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ needs_review_count }}</div>
+                            <div class="text-xs text-muted mt-1">
+                                {% trans "Requires human attention" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                {% trans "Analysis Coverage" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if total_feedbacks > 0 %}
+                                    {% widthratio analyzed_count total_feedbacks 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-muted mt-1">
+                                {{ analyzed_count }}/{{ total_feedbacks }} {% trans "analyzed" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sentiment Distribution Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>{% trans "Sentiment Distribution" %}
+                    </h6>
+                    <div class="small text-muted">
+                        {% trans "Hover over bars for detailed metrics" %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        <canvas id="sentimentDistributionChart"></canvas>
+                    </div>
+                    <div class="row mt-4 text-center">
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-success p-2 w-100">
+                                <i class="fas fa-smile me-1"></i>{% trans "Very Positive" %}
+                            </span>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-info p-2 w-100">
+                                <i class="fas fa-smile me-1"></i>{% trans "Positive" %}
+                            </span>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-secondary p-2 w-100">
+                                <i class="fas fa-meh me-1"></i>{% trans "Neutral" %}
+                            </span>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-warning p-2 w-100">
+                                <i class="fas fa-frown me-1"></i>{% trans "Negative" %}
+                            </span>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-danger p-2 w-100">
+                                <i class="fas fa-angry me-1"></i>{% trans "Very Negative" %}
+                            </span>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-light text-dark border p-2 w-100">
+                                <i class="fas fa-clock me-1"></i>{% trans "Not Analyzed" %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter me-2"></i>{% trans "Filters & Actions" %}
+                    </h6>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="advancedFiltersToggle">
+                        <label class="form-check-label small" for="advancedFiltersToggle">
+                            {% trans "Advanced Filters" %}
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filterForm">
+                        <div class="col-md-3">
+                            <label for="sentiment" class="form-label small fw-bold">
+                                {% trans "Sentiment" %}
+                            </label>
+                            <select name="sentiment" id="sentiment" class="form-select">
+                                <option value="">{% trans "All Sentiments" %}</option>
+                                {% for value, label in SENTIMENT_CHOICES %}
+                                    <option value="{{ value }}" 
+                                            {% if sentiment_filter == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="analyzed" class="form-label small fw-bold">
+                                {% trans "Analysis Status" %}
+                            </label>
+                            <select name="analyzed" id="analyzed" class="form-select">
+                                <option value="">{% trans "All Status" %}</option>
+                                <option value="analyzed" {% if analyzed_filter == 'analyzed' %}selected{% endif %}>
+                                    {% trans "Analyzed" %}
+                                </option>
+                                <option value="not_analyzed" {% if analyzed_filter == 'not_analyzed' %}selected{% endif %}>
+                                    {% trans "Not Analyzed" %}
+                                </option>
+                                <option value="needs_review" {% if analyzed_filter == 'needs_review' %}selected{% endif %}>
+                                    {% trans "Needs Review" %}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="q" class="form-label small fw-bold">
+                                {% trans "Search" %}
+                            </label>
+                            <div class="input-group">
+                                <input type="text" name="q" id="q" class="form-control" 
+                                       placeholder="{% trans 'Search content, customer, or feedback ID...' %}" 
+                                       value="{{ search_query }}">
+                                <button type="button" class="btn btn-outline-secondary" id="clearSearch">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="d-grid gap-2 w-100">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter me-2"></i>{% trans "Filter" %}
+                                </button>
+                                <a href="{% url 'cx_analytics:sentiment-list' organization.pk %}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    {% trans "Reset" %}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions & Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tasks me-2"></i>{% trans "Bulk Actions" %}
+                    </h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="selectedCount" class="badge bg-info p-2 d-none">
+                            <span id="selectedNumber">0</span> {% trans "selected" %}
+                        </span>
+                        <button type="button" class="btn btn-success btn-sm" id="selectAllBtn">
+                            <i class="fas fa-check-square me-2"></i>{% trans "Select All" %}
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="deselectAllBtn">
+                            <i class="fas fa-times-circle me-2"></i>{% trans "Deselect All" %}
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="bulkActionsForm" class="row g-3 align-items-end">
+                        {% csrf_token %}
+                        <div class="col-md-4">
+                            <label for="bulkAction" class="form-label small fw-bold">
+                                {% trans "Choose Action" %}
+                            </label>
+                            <select name="action" id="bulkAction" class="form-select" required>
+                                <option value="">{% trans "Choose bulk action..." %}</option>
+                                <option value="bulk_analyze">{% trans "🔍 Analyze Selected with AI" %}</option>
+                                <option value="bulk_mark_reviewed">{% trans "✅ Mark as Reviewed" %}</option>
+                                <option value="bulk_delete_analysis">{% trans "🗑️ Delete Analysis" %}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100" id="applyBulkAction" disabled>
+                                <i class="fas fa-play me-2"></i>{% trans "Apply Action" %}
+                            </button>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="alert alert-info mb-0 py-2">
+                                <small>
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans "Select feedback items using checkboxes, then choose and apply bulk actions." %}
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedbacks Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list me-2"></i>{% trans "Feedback List" %}
+                        <span class="badge bg-secondary ms-2">{{ feedbacks.paginator.count }}</span>
+                    </h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">
+                            {% blocktrans with start=feedbacks.start_index end=feedbacks.end_index total=feedbacks.paginator.count %}
+                                Showing {{ start }}–{{ end }} of {{ total }} items
+                            {% endblocktrans %}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Feedback Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0" id="feedbackTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="50" class="ps-3">
+                                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                                    </th>
+                                    <th>{% trans "Feedback ID" %}</th>
+                                    <th>{% trans "Customer" %}</th>
+                                    <th>{% trans "Content" %}</th>
+                                    <th width="120">{% trans "Sentiment" %}</th>
+                                    <th width="140">{% trans "Status" %}</th>
+                                    <th width="150">{% trans "Analysis Date" %}</th>
+                                    <th width="120" class="text-center">{% trans "Actions" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feedback in feedbacks %}
+                                <tr class="{% if feedback.requires_human_review %}table-warning{% endif %}">
+                                    <td class="ps-3">
+                                        <input type="checkbox" name="selected_feedbacks" 
+                                               value="{{ feedback.id }}" class="form-check-input feedback-checkbox">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <code class="text-primary fs-7">{{ feedback.feedback_id|default:"N/A" }}</code>
+                                            {% if feedback.requires_human_review %}
+                                                <i class="fas fa-exclamation-circle text-warning ms-2" 
+                                                   title="{% trans 'Requires human review' %}"></i>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if feedback.customer %}
+                                                <div class="customer-avatar me-2">
+                                                    <div class="avatar-circle-sm bg-primary text-white">
+                                                        {{ feedback.customer.name|first|upper }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium">{{ feedback.customer.name }}</div>
+                                                    <small class="text-muted">{{ feedback.customer.email|default:"" }}</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="text-muted">
+                                                    <i class="fas fa-user-secret me-2"></i>
+                                                    {% trans "Anonymous" %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="feedback-content">
+                                            <div class="content-preview text-break">
+                                                {{ feedback.content|truncatewords:25 }}
+                                            </div>
+                                            {% if feedback.content|wordcount > 25 %}
+                                            <small>
+                                                <a href="#" class="text-decoration-none view-more" 
+                                                   data-content="{{ feedback.content }}">
+                                                    {% trans "View more" %}
+                                                </a>
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if feedback.sentiment_label %}
+                                            {% with sentiment=feedback.sentiment_label score=feedback.sentiment_score %}
+                                                <div class="sentiment-badge">
+                                                    {% if sentiment == 'POSITIVE' or sentiment == 'positive' or sentiment == 'very_positive' %}
+                                                        <span class="badge bg-success sentiment-badge-full">
+                                                            <i class="fas fa-smile me-1"></i>
+                                                            {% if sentiment == 'very_positive' %}Very Positive{% else %}Positive{% endif %}
+                                                        </span>
+                                                    {% elif sentiment == 'NEGATIVE' or sentiment == 'negative' or sentiment == 'very_negative' %}
+                                                        <span class="badge bg-danger sentiment-badge-full">
+                                                            <i class="fas fa-frown me-1"></i>
+                                                            {% if sentiment == 'very_negative' %}Very Negative{% else %}Negative{% endif %}
+                                                        </span>
+                                                    {% elif sentiment == 'NEUTRAL' or sentiment == 'neutral' %}
+                                                        <span class="badge bg-secondary sentiment-badge-full">
+                                                            <i class="fas fa-meh me-1"></i>Neutral
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning sentiment-badge-full">
+                                                            <i class="fas fa-comments me-1"></i>{{ sentiment|title }}
+                                                        </span>
+                                                    {% endif %}
+                                                    <small class="text-muted d-block mt-1">
+                                                        {{ score|default:0|floatformat:3 }}
+                                                    </small>
+                                                </div>
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border">
+                                                <i class="fas fa-clock me-1"></i>{% trans "Not Analyzed" %}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if feedback.ai_analyzed %}
+                                            {% if feedback.requires_human_review %}
+                                                <span class="badge bg-warning status-badge">
+                                                    <i class="fas fa-user-check me-1"></i>{% trans "Needs Review" %}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success status-badge">
+                                                    <i class="fas fa-check-circle me-1"></i>{% trans "Analyzed" %}
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary status-badge">
+                                                <i class="fas fa-clock me-1"></i>{% trans "Pending" %}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if feedback.ai_analysis_date %}
+                                            <div class="text-muted small">
+                                                <div>{{ feedback.ai_analysis_date|date:"M d, Y" }}</div>
+                                                <div>{{ feedback.ai_analysis_date|date:"H:i" }}</div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <!-- FIXED: Use the correct relationship -->
+                                            {% if feedback.has_sentiment_analysis %}
+                                                <a href="{% url 'cx_analytics:sentiment-detail' organization.pk feedback.sentiment_analysis.pk %}" 
+                                                   class="btn btn-sm btn-info action-btn" 
+                                                   title="{% trans 'View Detailed Analysis' %}"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="fas fa-chart-bar"></i>
+                                                </a>
+                                            {% elif feedback.ai_analyzed %}
+                                                <!-- Analysis exists but relationship is not accessible -->
+                                                <span class="btn btn-sm btn-info disabled action-btn" 
+                                                      title="{% trans 'Analysis completed but details unavailable' %}"
+                                                      data-bs-toggle="tooltip">
+                                                    <i class="fas fa-chart-bar"></i>
+                                                </span>
+                                            {% else %}
+                                                <!-- Not analyzed - show analyze button -->
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-warning action-btn analyze-single-btn" 
+                                                        title="{% trans 'Analyze with AI' %}"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#analyzeModal{{ feedback.id }}">
+                                                    <i class="fas fa-robot"></i>
+                                                </button>
+                                            {% endif %}
+                                            
+                                            <button type="button" class="btn btn-sm btn-secondary action-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#feedbackModal{{ feedback.id }}"
+                                                    title="{% trans 'View Details' %}"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Analyze Modal -->
+                                <div class="modal fade" id="analyzeModal{{ feedback.id }}" tabindex="-1" 
+                                     aria-labelledby="analyzeModalLabel{{ feedback.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-warning text-dark">
+                                                <h5 class="modal-title" id="analyzeModalLabel{{ feedback.id }}">
+                                                    <i class="fas fa-robot me-2"></i>
+                                                    {% trans "Analyze Feedback" %}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" 
+                                                        aria-label="{% trans 'Close' %}"></button>
+                                            </div>
+                                            <form method="post" 
+                                                  action="{% url 'cx_analytics:sentiment-analyze-single' organization.pk feedback.pk %}" 
+                                                  class="analyze-form">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <p>{% trans "Analyze this feedback with AI sentiment analysis?" %}</p>
+                                                    <div class="mb-3">
+                                                        <label for="target_language{{ feedback.id }}" class="form-label">
+                                                            {% trans "Analysis Language" %}
+                                                        </label>
+                                                        <select name="target_language" id="target_language{{ feedback.id }}" class="form-select">
+                                                            <option value="en">English</option>
+                                                            <option value="es">Spanish</option>
+                                                            <option value="fr">French</option>
+                                                            <option value="de">German</option>
+                                                            <option value="it">Italian</option>
+                                                            <option value="pt">Portuguese</option>
+                                                            <option value="ja">Japanese</option>
+                                                            <option value="ko">Korean</option>
+                                                            <option value="zh">Chinese</option>
+                                                            <option value="ar">Arabic</option>
+                                                            <option value="hi">Hindi</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="translate_content" id="translate{{ feedback.id }}">
+                                                        <label class="form-check-label" for="translate{{ feedback.id }}">
+                                                            {% trans "Translate content before analysis" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        {% trans "Cancel" %}
+                                                    </button>
+                                                    <button type="submit" class="btn btn-warning analyze-submit-btn">
+                                                        <i class="fas fa-robot me-1"></i>
+                                                        {% trans "Analyze with AI" %}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Feedback Detail Modal -->
+                                <div class="modal fade" id="feedbackModal{{ feedback.id }}" tabindex="-1" 
+                                     aria-labelledby="feedbackModalLabel{{ feedback.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-light">
+                                                <h5 class="modal-title" id="feedbackModalLabel{{ feedback.id }}">
+                                                    <i class="fas fa-comment-dots me-2"></i>
+                                                    {% trans "Feedback Details" %}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" 
+                                                        aria-label="{% trans 'Close' %}"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <strong class="text-muted">{% trans "Feedback ID:" %}</strong>
+                                                        <p class="mb-2">
+                                                            <code>{{ feedback.feedback_id|default:"N/A" }}</code>
+                                                        </p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <strong class="text-muted">{% trans "Customer:" %}</strong>
+                                                        <p class="mb-2">
+                                                            {% if feedback.customer %}
+                                                                <div class="d-flex align-items-center">
+                                                                    <div class="avatar-circle-sm bg-primary text-white me-2">
+                                                                        {{ feedback.customer.name|first|upper }}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div>{{ feedback.customer.name }}</div>
+                                                                        <small class="text-muted">{{ feedback.customer.email|default:"" }}</small>
+                                                                    </div>
+                                                                </div>
+                                                            {% else %}
+                                                                <span class="text-muted">
+                                                                    <i class="fas fa-user-secret me-1"></i>
+                                                                    {% trans "Anonymous" %}
+                                                                </span>
+                                                            {% endif %}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <strong class="text-muted">{% trans "Content:" %}</strong>
+                                                    <div class="border rounded p-3 bg-light mt-2">
+                                                        <div class="feedback-full-content">
+                                                            {{ feedback.content|linebreaks }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {% if feedback.ai_analyzed %}
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <strong class="text-muted">{% trans "Sentiment Analysis:" %}</strong>
+                                                        <div class="mt-2">
+                                                            {% if feedback.sentiment_label == 'POSITIVE' or feedback.sentiment_label == 'positive' or feedback.sentiment_label == 'very_positive' %}
+                                                                <span class="badge bg-success fs-6">
+                                                                    <i class="fas fa-smile me-1"></i>
+                                                                    {% if feedback.sentiment_label == 'very_positive' %}Very Positive{% else %}Positive{% endif %}
+                                                                </span>
+                                                            {% elif feedback.sentiment_label == 'NEGATIVE' or feedback.sentiment_label == 'negative' or feedback.sentiment_label == 'very_negative' %}
+                                                                <span class="badge bg-danger fs-6">
+                                                                    <i class="fas fa-frown me-1"></i>
+                                                                    {% if feedback.sentiment_label == 'very_negative' %}Very Negative{% else %}Negative{% endif %}
+                                                                </span>
+                                                            {% elif feedback.sentiment_label == 'NEUTRAL' or feedback.sentiment_label == 'neutral' %}
+                                                                <span class="badge bg-secondary fs-6">
+                                                                    <i class="fas fa-meh me-1"></i>Neutral
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="badge bg-warning fs-6">
+                                                                    <i class="fas fa-comments me-1"></i>{{ feedback.sentiment_label|title }}
+                                                                </span>
+                                                            {% endif %}
+                                                            <div class="text-muted small mt-1">
+                                                                Score: {{ feedback.sentiment_score|default:0|floatformat:3 }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <strong class="text-muted">{% trans "Analysis Date:" %}</strong>
+                                                        <p class="mb-2">
+                                                            <i class="fas fa-calendar me-1"></i>
+                                                            {{ feedback.ai_analysis_date|date:"F d, Y" }}
+                                                        </p>
+                                                        <p class="mb-0">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            {{ feedback.ai_analysis_date|date:"H:i" }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <!-- FIXED: Use the correct relationship in modal -->
+                                                {% if feedback.has_sentiment_analysis %}
+                                                    <a href="{% url 'cx_analytics:sentiment-detail' organization.pk feedback.sentiment_analysis.pk %}" 
+                                                       class="btn btn-primary">
+                                                        <i class="fas fa-chart-bar me-1"></i>
+                                                        {% trans "View Full Analysis" %}
+                                                    </a>
+                                                {% elif not feedback.ai_analyzed %}
+                                                    <button type="button" class="btn btn-warning" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#analyzeModal{{ feedback.id }}">
+                                                        <i class="fas fa-robot me-1"></i>
+                                                        {% trans "Analyze with AI" %}
+                                                    </button>
+                                                {% endif %}
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    {% trans "Close" %}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <i class="fas fa-inbox fa-4x text-gray-300 mb-3"></i>
+                                            <h5 class="text-muted">{% trans "No feedback found" %}</h5>
+                                            <p class="text-muted mb-4">
+                                                {% trans "No feedback items match your current filters." %}
+                                            </p>
+                                            <a href="{% url 'cx_analytics:sentiment-list' organization.pk %}" 
+                                               class="btn btn-primary">
+                                                {% trans "Clear Filters" %}
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if feedbacks.has_other_pages %}
+                    <div class="card-footer bg-white">
+                        <nav aria-label="Feedback pagination" class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">
+                                {% blocktrans with start=feedbacks.start_index end=feedbacks.end_index total=feedbacks.paginator.count %}
+                                    Showing {{ start }} to {{ end }} of {{ total }} entries
+                                {% endblocktrans %}
+                            </div>
+                            <ul class="pagination mb-0">
+                                {% if feedbacks.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if sentiment_filter %}&sentiment={{ sentiment_filter }}{% endif %}{% if analyzed_filter %}&analyzed={{ analyzed_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ feedbacks.previous_page_number }}{% if sentiment_filter %}&sentiment={{ sentiment_filter }}{% endif %}{% if analyzed_filter %}&analyzed={{ analyzed_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in feedbacks.paginator.page_range %}
+                                    {% if feedbacks.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > feedbacks.number|add:'-3' and num < feedbacks.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if sentiment_filter %}&sentiment={{ sentiment_filter }}{% endif %}{% if analyzed_filter %}&analyzed={{ analyzed_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if feedbacks.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ feedbacks.next_page_number }}{% if sentiment_filter %}&sentiment={{ sentiment_filter }}{% endif %}{% if analyzed_filter %}&analyzed={{ analyzed_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ feedbacks.paginator.num_pages }}{% if sentiment_filter %}&sentiment={{ sentiment_filter }}{% endif %}{% if analyzed_filter %}&analyzed={{ analyzed_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Preview Modal -->
+<div class="modal fade" id="contentPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Full Content" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent" class="p-3 bg-light rounded"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.sentiment-badge-full {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.feedback-content .content-preview {
+    line-height: 1.4;
+    max-height: 3.6em;
+    overflow: hidden;
+}
+
+.empty-state {
+    padding: 2rem 1rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.breadcrumb {
+    background: none;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    text-decoration: none;
+}
+
+/* Chart.js styling */
+.chart-container {
+    position: relative;
+    margin: auto;
+    border-radius: 8px;
+}
+
+#sentimentDistributionChart {
+    border-radius: 8px;
+}
+
+/* Loading animation for analyze buttons */
+.analyze-submit-btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.analyze-submit-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin: -8px 0 0 -8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-header .btn-group {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .sentiment-badge-full, .status-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+    
+    .chart-container {
+        height: 300px !important;
+    }
+    
+    .badge.p-2 {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .chart-container {
+        height: 250px !important;
+    }
+}
+
+/* Add to your extra_css block */
+.chart-container canvas {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Loading state for chart */
+.chart-loading {
+    position: relative;
+}
+
+.chart-loading::after {
+    content: 'Loading chart...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #6c757d;
+    font-style: italic;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+function initializeSentimentChart() {
+    try {
+        const ctx = document.getElementById('sentimentDistributionChart');
+        if (!ctx) {
+            console.error('Chart canvas element not found');
+            return;
+        }
+        
+        // Get the sentiment distribution data from Django template
+        const sentimentDistribution = {{ sentiment_distribution_json|safe }};
+        
+        console.log('Chart data received:', sentimentDistribution);
+        
+        // Define colors for each sentiment category
+        const sentimentColors = {
+            'very_positive': '#28a745',  // Green
+            'positive': '#17a2b8',       // Blue
+            'neutral': '#6c757d',        // Gray
+            'negative': '#ffc107',       // Yellow
+            'very_negative': '#dc3545',  // Red
+            'not_analyzed': '#e9ecef'    // Light gray
+        };
+        
+        // Define border colors for better visibility
+        const sentimentBorderColors = {
+            'very_positive': '#218838',
+            'positive': '#138496',
+            'neutral': '#545b62',
+            'negative': '#e0a800',
+            'very_negative': '#c82333',
+            'not_analyzed': '#ced4da'
+        };
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        const backgroundColors = [];
+        const borderColors = [];
+        const tooltipData = [];
+        
+        // Define the order we want to display sentiments
+        const sentimentOrder = ['very_positive', 'positive', 'neutral', 'negative', 'very_negative', 'not_analyzed'];
+        
+        sentimentOrder.forEach(sentiment => {
+            if (sentimentDistribution[sentiment]) {
+                const item = sentimentDistribution[sentiment];
+                console.log(`Processing ${sentiment}:`, item);
+                
+                labels.push(item.label);
+                data.push(item.count);
+                backgroundColors.push(sentimentColors[sentiment]);
+                borderColors.push(sentimentBorderColors[sentiment]);
+                
+                // Prepare detailed tooltip information
+                tooltipData.push({
+                    count: item.count,
+                    percentage: item.percentage ? item.percentage.toFixed(1) : '0.0',
+                    avgScore: item.avg_score ? item.avg_score.toFixed(3) : 'N/A'
+                });
+            } else {
+                console.warn(`Missing sentiment data for: ${sentiment}`);
+                // Add zero data for missing sentiments
+                labels.push(sentiment.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()));
+                data.push(0);
+                backgroundColors.push(sentimentColors[sentiment] || '#6c757d');
+                borderColors.push(sentimentBorderColors[sentiment] || '#545b62');
+                tooltipData.push({
+                    count: 0,
+                    percentage: '0.0',
+                    avgScore: 'N/A'
+                });
+            }
+        });
+        
+        console.log('Final chart data:', {
+            labels: labels,
+            data: data,
+            backgroundColors: backgroundColors
+        });
+        
+        // Create the chart
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '{% trans "Number of Feedbacks" %}',
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const tooltip = tooltipData[index];
+                                let tooltipText = [
+                                    `Count: ${tooltip.count}`,
+                                    `Percentage: ${tooltip.percentage}%`
+                                ];
+                                
+                                if (tooltip.avgScore !== 'N/A') {
+                                    tooltipText.push(`Avg Score: ${tooltip.avgScore}`);
+                                }
+                                
+                                return tooltipText;
+                            },
+                            title: function(tooltipItems) {
+                                return tooltipItems[0].label;
+                            }
+                        },
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            size: 12
+                        },
+                        bodyFont: {
+                            size: 11
+                        },
+                        padding: 10
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 11
+                            },
+                            callback: function(value) {
+                                if (value % 1 === 0) {
+                                    return value;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '{% trans "Number of Feedbacks" %}',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+        
+        return chart;
+    } catch (error) {
+        console.error('Error initializing sentiment chart:', error);
+        // Show error message
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer) {
+            chartContainer.innerHTML = `
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Chart could not be loaded. Please check the console for errors." %}
+                </div>
+            `;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing components...');
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize sentiment chart
+    if (document.getElementById('sentimentDistributionChart')) {
+        console.log('Initializing sentiment chart...');
+        initializeSentimentChart();
+    } else {
+        console.error('Sentiment distribution chart canvas not found');
+    }
+
+    // Selection Management
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const feedbackCheckboxes = document.querySelectorAll('.feedback-checkbox');
+    const selectedCount = document.getElementById('selectedCount');
+    const selectedNumber = document.getElementById('selectedNumber');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const applyBulkAction = document.getElementById('applyBulkAction');
+    const bulkAction = document.getElementById('bulkAction');
+
+    function updateSelectedCount() {
+        const selected = document.querySelectorAll('.feedback-checkbox:checked').length;
+        selectedNumber.textContent = selected;
+        
+        if (selected > 0) {
+            selectedCount.classList.remove('d-none');
+            applyBulkAction.disabled = false;
+        } else {
+            selectedCount.classList.add('d-none');
+            applyBulkAction.disabled = true;
+        }
+    }
+
+    // Select All functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            feedbackCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            updateSelectedCount();
+        });
+    }
+
+    feedbackCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function() {
+            feedbackCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            if (selectAllCheckbox) selectAllCheckbox.checked = true;
+            updateSelectedCount();
+        });
+    }
+
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', function() {
+            feedbackCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            updateSelectedCount();
+        });
+    }
+
+    // Clear search functionality
+    document.getElementById('clearSearch')?.addEventListener('click', function() {
+        document.getElementById('q').value = '';
+        document.getElementById('filterForm').submit();
+    });
+
+    // Content preview modal
+    const viewMoreLinks = document.querySelectorAll('.view-more');
+    const contentPreviewModal = new bootstrap.Modal(document.getElementById('contentPreviewModal'));
+    const modalContent = document.getElementById('modalContent');
+
+    viewMoreLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const fullContent = this.getAttribute('data-content');
+            modalContent.textContent = fullContent;
+            contentPreviewModal.show();
+        });
+    });
+
+    // Analyze form handling
+    const analyzeForms = document.querySelectorAll('.analyze-form');
+    analyzeForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('.analyze-submit-btn');
+            
+            // Show loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner me-1"></i>{% trans "Analyzing..." %}';
+        });
+    });
+
+    // Bulk actions form validation
+    const bulkForm = document.getElementById('bulkActionsForm');
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function(e) {
+            const selected = document.querySelectorAll('.feedback-checkbox:checked').length;
+            const action = bulkAction.value;
+            
+            if (selected === 0) {
+                e.preventDefault();
+                showToast('{% trans "Error" %}', '{% trans "Please select at least one feedback item." %}', 'error');
+                return;
+            }
+            
+            if (!action) {
+                e.preventDefault();
+                showToast('{% trans "Error" %}', '{% trans "Please select an action to perform." %}', 'error');
+                return;
+            }
+
+            if (action === 'bulk_analyze' && selected > 50) {
+                e.preventDefault();
+                showToast('{% trans "Limit Exceeded" %}', '{% trans "For performance reasons, please select no more than 50 items for bulk analysis." %}', 'warning');
+                return;
+            }
+
+            // Confirm destructive actions
+            if (action === 'bulk_delete_analysis') {
+                const confirmed = confirm('{% trans "Are you sure you want to delete the analysis for the selected items? This action cannot be undone." %}');
+                if (!confirmed) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+        });
+    }
+
+    // Toast notification function
+    function showToast(title, message, type = 'info') {
+        // You can integrate with your existing toast system
+        // For now, using alert as fallback
+        alert(`${title}: ${message}`);
+    }
+
+    // Auto-submit filter form on select change (optional)
+    document.getElementById('sentiment')?.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+
+    document.getElementById('analyzed')?.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+
+    // Advanced filters toggle
+    const advancedFiltersToggle = document.getElementById('advancedFiltersToggle');
+    if (advancedFiltersToggle) {
+        advancedFiltersToggle.addEventListener('change', function() {
+            // Implement advanced filters if needed
+            console.log('Advanced filters:', this.checked);
+        });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + A to select all
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+            e.preventDefault();
+            if (selectAllBtn) selectAllBtn.click();
+        }
+        
+        // Escape to deselect all
+        if (e.key === 'Escape') {
+            if (deselectAllBtn) deselectAllBtn.click();
+        }
+    });
+});
+</script>
+{% endblock %}

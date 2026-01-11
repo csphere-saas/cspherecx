@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>{{ page_title }}</h1>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {% trans "Total Feedbacks" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_feedbacks }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-{{ coverage_color }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ coverage_color }} text-uppercase mb-1">
+                                {% trans "Analysis Coverage" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ analysis_coverage|floatformat:1 }}%
+                            </div>
+                            <div class="text-xs text-muted">
+                                {{ analyzed_feedbacks }} / {{ total_feedbacks }} {% trans "analyzed" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-{{ overall_sentiment_color }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ overall_sentiment_color }} text-uppercase mb-1">
+                                {% trans "Overall Sentiment" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <i class="fas {{ overall_sentiment_icon }} me-2"></i>
+                                {{ overall_sentiment|title }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {% trans "Needs Human Review" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ needs_review }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sentiment Distribution -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% trans "Sentiment Distribution" %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for stat in sentiment_stats %}
+                    <div class="row align-items-center mb-3">
+                        <div class="col-auto">
+                            <i class="fas {{ stat.icon }} fa-2x text-{{ stat.color }}"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-{{ stat.color }} text-uppercase">
+                                {{ stat.label|title }}
+                            </div>
+                            <div class="progress mb-1">
+                                <div class="progress-bar bg-{{ stat.color }}" 
+                                     role="progressbar" 
+                                     style="width: {{ stat.percentage }}%"
+                                     aria-valuenow="{{ stat.percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="text-xs">
+                                {{ stat.count }} ({{ stat.percentage|floatformat:1 }}%) | 
+                                Avg Score: {{ stat.avg_score|floatformat:2 }} | 
+                                Confidence: {{ stat.avg_confidence|floatformat:2 }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Urgency Distribution -->
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% trans "Urgency Level Distribution" %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for stat in urgency_stats %}
+                    <div class="row align-items-center mb-3">
+                        <div class="col">
+                            <span class="badge bg-{{ stat.color }} px-3 py-2">
+                                {{ stat.text }}
+                            </span>
+                        </div>
+                        <div class="col-auto">
+                            <span class="h6 text-gray-800">{{ stat.count }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Analyses -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% trans "Recent Sentiment Analyses" %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for item in recent_analyses %}
+                    <div class="row align-items-center mb-3 p-2 border rounded">
+                        <div class="col-md-2">
+                            <span class="badge bg-{{ item.sentiment_color }} px-3 py-2">
+                                <i class="fas {{ item.sentiment_icon }} me-1"></i>
+                                {{ item.analysis.overall_label|title }}
+                            </span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="badge bg-{{ item.urgency_color }}">
+                                {{ item.urgency_text }}
+                            </span>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted">Confidence:</small>
+                            <span class="badge bg-{{ item.confidence_color }}">
+                                {{ item.analysis.confidence_score|floatformat:2 }}
+                            </span>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Intent:</small>
+                            <br>
+                            <strong>{{ item.analysis.intent|default:"Not specified" }}</strong>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <small class="text-muted">
+                                {{ item.analysis.created_at|date:"M d, Y" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">{% trans "No sentiment analyses found." %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

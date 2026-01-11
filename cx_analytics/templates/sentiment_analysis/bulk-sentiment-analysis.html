@@ -1,0 +1,441 @@
+<!-- cx_analytics/bulk-sentiment-analysis.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'cx_analytics:sentiment-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Sentiment Analysis" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-robot me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{{ page_title }}</h4>
+                            <p class="mb-0 opacity-75">
+                                {{ total_selected }} feedback item{{ total_selected|pluralize }} selected
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Selected Feedbacks -->
+                    {% if selected_feedbacks %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">{% trans "Selected Feedback Items" %}</h5>
+                        <div class="table-responsive" style="max-height: 300px;">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "ID" %}</th>
+                                        <th>{% trans "Customer" %}</th>
+                                        <th>{% trans "Subject" %}</th>
+                                        <th>{% trans "Current Sentiment" %}</th>
+                                        <th>{% trans "Status" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for feedback in selected_feedbacks %}
+                                    <tr>
+                                        <td class="small">{{ feedback.feedback_id }}</td>
+                                        <td class="small">{{ feedback.customer.email|default:"-" }}</td>
+                                        <td class="small">{{ feedback.subject|truncatewords:5|default:"-" }}</td>
+                                        <td>
+                                            {% if feedback.sentiment_label %}
+                                            <span class="badge 
+                                                {% if feedback.sentiment_label == 'very_positive' %}bg-success
+                                                {% elif feedback.sentiment_label == 'positive' %}bg-info
+                                                {% elif feedback.sentiment_label == 'neutral' %}bg-secondary
+                                                {% elif feedback.sentiment_label == 'negative' %}bg-warning
+                                                {% elif feedback.sentiment_label == 'very_negative' %}bg-danger
+                                                {% else %}bg-light text-dark{% endif %}">
+                                                {{ feedback.get_sentiment_label_display|default:"Not Analyzed" }}
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-light text-dark">{% trans "Not Analyzed" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if feedback.ai_analyzed %}
+                                                {% if feedback.requires_human_review %}
+                                                <span class="badge bg-warning">{% trans "Needs Review" %}</span>
+                                                {% else %}
+                                                <span class="badge bg-success">{% trans "Analyzed" %}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">{% trans "Pending" %}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-2 text-muted small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            {% trans "Items already analyzed will be skipped unless 'Overwrite existing analysis' is checked." %}
+                        </div>
+                    </div>
+
+                    <!-- Analysis Configuration Form -->
+                    <form method="post" id="bulk-analysis-form">
+                        {% csrf_token %}
+                        
+                        <!-- Hidden field to preserve feedback IDs -->
+                        <input type="hidden" name="feedback_ids" value="{{ feedback_ids }}">
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "Analysis Configuration" %}</h5>
+                            
+                            <!-- Target Language -->
+                            <div class="mb-4">
+                                <label for="{{ form.target_language.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.target_language.label }} *
+                                </label>
+                                {{ form.target_language }}
+                                <div class="form-text">
+                                    {% trans "Language to use for analysis. If content is in a different language, it will be translated." %}
+                                </div>
+                                {% if form.target_language.errors %}
+                                <div class="text-danger small">
+                                    {{ form.target_language.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Translate Content Option -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    {{ form.translate_content }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.translate_content.id_for_label }}">
+                                        {{ form.translate_content.label }}
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    {{ form.translate_content.help_text }}
+                                </div>
+                            </div>
+
+                            <!-- Analysis Type -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">{% trans "Analysis Depth" %} *</label>
+                                <div class="row">
+                                    {% for choice in form.analysis_type %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            {{ choice.tag }}
+                                            <label class="form-check-label fw-semibold" for="{{ choice.id_for_label }}">
+                                                {{ choice.choice_label }}
+                                            </label>
+                                        </div>
+                                        {% if forloop.first %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Basic sentiment score and label only" %}
+                                        </small>
+                                        {% elif forloop.counter == 2 %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Sentiment, emotions, and key phrases" %}
+                                        </small>
+                                        {% elif forloop.counter == 3 %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Complete analysis with all features" %}
+                                        </small>
+                                        {% else %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Customize analysis components" %}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Custom Configuration (shown when custom is selected) -->
+                            <div id="custom-configuration" class="mb-4" style="display: none;">
+                                <h6 class="text-muted mb-3">{% trans "Custom Analysis Components" %}</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-2">
+                                            {{ form.detect_aspects }}
+                                            <label class="form-check-label" for="{{ form.detect_aspects.id_for_label }}">
+                                                {{ form.detect_aspects.label }}
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            {{ form.detect_emotions }}
+                                            <label class="form-check-label" for="{{ form.detect_emotions.id_for_label }}">
+                                                {{ form.detect_emotions.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-2">
+                                            {{ form.detect_intent }}
+                                            <label class="form-check-label" for="{{ form.detect_intent.id_for_label }}">
+                                                {{ form.detect_intent.label }}
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            {{ form.extract_key_phrases }}
+                                            <label class="form-check-label" for="{{ form.extract_key_phrases.id_for_label }}">
+                                                {{ form.extract_key_phrases.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Overwrite Option -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    {{ form.overwrite_existing }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.overwrite_existing.id_for_label }}">
+                                        {{ form.overwrite_existing.label }}
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    {{ form.overwrite_existing.help_text }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Preview -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">{% trans "What to Expect" %}</h6>
+                            <ul class="mb-0 small">
+                                <li>{% trans "Analysis may take several minutes depending on the number of items" %}</li>
+                                <li>{% trans "Each feedback item will be processed individually for accuracy" %}</li>
+                                <li>{% trans "Results will be available in the feedback details and sentiment dashboard" %}</li>
+                                <li>{% trans "Some items may be flagged for human review if confidence is low" %}</li>
+                                <li>{% trans "Using Google Gemini AI for advanced natural language understanding" %}</li>
+                                {% if total_selected > 10 %}
+                                <li class="text-warning">{% trans "Processing many items may take some time. Please be patient." %}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-4">
+                            <a href="{% url 'cx_analytics:sentiment-list' organization.pk %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4" id="start-analysis-btn">
+                                <i class="bi bi-robot me-2"></i>
+                                {% trans "Start Bulk Analysis" %}
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <!-- No Items Selected -->
+                    <div class="text-center py-4">
+                        <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                        <h5 class="text-warning mt-3">{% trans "No Feedback Items Selected" %}</h5>
+                        <p class="text-muted mb-4">{% trans "Please go back and select feedback items to analyze." %}</p>
+                        <a href="{% url 'cx_analytics:sentiment-list' organization.pk %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            {% trans "Back to Sentiment Analysis" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('bulk-analysis-form');
+    const startBtn = document.getElementById('start-analysis-btn');
+    const analysisTypeRadios = document.querySelectorAll('input[name="analysis_type"]');
+    const customConfig = document.getElementById('custom-configuration');
+    const translateCheckbox = document.getElementById('{{ form.translate_content.id_for_label }}');
+    const targetLanguageSelect = document.getElementById('{{ form.target_language.id_for_label }}');
+    
+    // Show/hide custom configuration based on analysis type
+    analysisTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customConfig.style.display = 'block';
+            } else {
+                customConfig.style.display = 'none';
+                
+                // Disable custom checkboxes when not in custom mode
+                const checkboxes = customConfig.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.disabled = true;
+                });
+            }
+        });
+        
+        // Check initial state on page load
+        if (radio.checked && radio.value === 'custom') {
+            customConfig.style.display = 'block';
+        } else if (radio.checked) {
+            const checkboxes = customConfig.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.disabled = true;
+            });
+        }
+    });
+
+    // Enable/disable target language based on translate checkbox
+    if (translateCheckbox && targetLanguageSelect) {
+        translateCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                targetLanguageSelect.disabled = false;
+            } else {
+                targetLanguageSelect.disabled = true;
+            }
+        });
+        
+        // Set initial state
+        targetLanguageSelect.disabled = !translateCheckbox.checked;
+    }
+
+    // Form submission handler
+    if (form && startBtn) {
+        form.addEventListener('submit', function(e) {
+            // Validate form
+            const selectedAnalysisType = document.querySelector('input[name="analysis_type"]:checked');
+            if (!selectedAnalysisType) {
+                e.preventDefault();
+                showToast('{% trans "Error" %}', '{% trans "Please select an analysis type." %}', 'error');
+                return;
+            }
+            
+            // Check if any items are selected
+            const totalSelected = {{ total_selected|default:0 }};
+            if (totalSelected === 0) {
+                e.preventDefault();
+                showToast('{% trans "Error" %}', '{% trans "No feedback items selected for analysis." %}', 'error');
+                return;
+            }
+            
+            // Show loading state and confirmation
+            const confirmed = confirm(
+                '{% trans "Are you sure you want to start bulk analysis for" %} ' + 
+                totalSelected + 
+                ' {% trans "feedback items? This may take several minutes." %}'
+            );
+            
+            if (!confirmed) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Show loading state
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> {% trans "Starting Analysis..." %}';
+            
+            // Add a small delay to show the loading state
+            setTimeout(() => {
+                // Continue with form submission
+            }, 100);
+        });
+    }
+    
+    // Toast notification function
+    function showToast(title, message, type = 'info') {
+        // Check if Bootstrap is available
+        if (typeof bootstrap !== 'undefined') {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}</strong><br>${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            // Add to toast container
+            let toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                // Create toast container if it doesn't exist
+                toastContainer = document.createElement('div');
+                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                document.body.appendChild(toastContainer);
+            }
+            toastContainer.appendChild(toast);
+            
+            // Initialize and show toast
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove toast after it's hidden
+            toast.addEventListener('hidden.bs.toast', function() {
+                toast.remove();
+            });
+        } else {
+            // Fallback to alert if Bootstrap not available
+            alert(`${title}: ${message}`);
+        }
+    }
+});
+
+// Add CSS for spinner and animations
+const style = document.createElement('style');
+style.textContent = `
+    .spinner-border {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        vertical-align: text-bottom;
+        border: 0.2em solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spinner-border .75s linear infinite;
+    }
+    
+    @keyframes spinner-border {
+        to { transform: rotate(360deg); }
+    }
+    
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    
+    .form-select:disabled {
+        background-color: #e9ecef;
+        opacity: 0.6;
+    }
+    
+    .toast-container {
+        z-index: 1090;
+    }
+    
+    table.table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

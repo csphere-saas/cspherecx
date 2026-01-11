@@ -1,0 +1,303 @@
+<!-- sentiment/sentiment_analysis_detail.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ analysis.feedback.feedback_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:feedback-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Feedback" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:feedback-detail' organization.pk analysis.feedback.pk %}" class="text-decoration-none">
+                    {{ analysis.feedback.feedback_id }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary rounded p-3 me-4">
+                            <i class="bi bi-robot text-white fs-2"></i>
+                        </div>
+                        <div>
+                            <h1 class="h3 mb-1">{{ page_title }}</h1>
+                            <p class="text-muted mb-0">
+                                {% trans "Feedback" %} {{ analysis.feedback.feedback_id }} - 
+                                {{ analysis.feedback.customer.get_full_name }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group">
+                        <a href="{% url 'feedback:feedback-detail' organization.pk analysis.feedback.pk %}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            {% trans "Back to Feedback" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Analysis Results -->
+        <div class="col-lg-8">
+            <!-- Overall Sentiment -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up text-primary me-2"></i>
+                        {% trans "Overall Sentiment" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <h3 class="fw-bold 
+                                    {% if analysis.overall_label == 'very_positive' %}text-success
+                                    {% elif analysis.overall_label == 'positive' %}text-success
+                                    {% elif analysis.overall_label == 'neutral' %}text-secondary
+                                    {% elif analysis.overall_label == 'negative' %}text-warning
+                                    {% else %}text-danger{% endif %}">
+                                    {{ analysis.overall_score|floatformat:3 }}
+                                </h3>
+                                <p class="text-muted mb-1">{% trans "Sentiment Score" %}</p>
+                                <span class="badge 
+                                    {% if analysis.overall_label == 'very_positive' %}bg-success
+                                    {% elif analysis.overall_label == 'positive' %}bg-success
+                                    {% elif analysis.overall_label == 'neutral' %}bg-secondary
+                                    {% elif analysis.overall_label == 'negative' %}bg-warning
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ analysis.get_overall_label_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <h3 class="fw-bold text-info">{{ analysis.confidence_score|floatformat:3 }}</h3>
+                                <p class="text-muted mb-1">{% trans "Confidence Score" %}</p>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ analysis.confidence_score_percentage }}%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <h3 class="fw-bold 
+                                    {% if analysis.urgency_level == 'critical' %}text-danger
+                                    {% elif analysis.urgency_level == 'high' %}text-warning
+                                    {% elif analysis.urgency_level == 'medium' %}text-info
+                                    {% else %}text-secondary{% endif %}">
+                                    {{ analysis.get_urgency_level_display }}
+                                </h3>
+                                <p class="text-muted mb-1">{% trans "Urgency Level" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aspect Sentiments -->
+            {% if analysis.aspects %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart text-primary me-2"></i>
+                        {% trans "Aspect-Based Sentiment" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for aspect, data in analysis.aspects.items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-capitalize">{{ aspect }}</span>
+                                <span class="badge 
+                                    {% if data.score >= 0.3 %}bg-success
+                                    {% elif data.score >= -0.3 %}bg-secondary
+                                    {% elif data.score >= -0.7 %}bg-warning
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ data.score|floatformat:3 }}
+                                </span>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar 
+                                    {% if data.score >= 0.3 %}bg-success
+                                    {% elif data.score >= -0.3 %}bg-secondary
+                                    {% elif data.score >= -0.7 %}bg-warning
+                                    {% else %}bg-danger{% endif %}" 
+                                    role="progressbar" 
+                                    style="width: {{ data.score_percentage }}%;">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {% blocktrans count mentions=data.mentions %}
+                                {{ mentions }} mention
+                                {% plural %}
+                                {{ mentions }} mentions
+                                {% endblocktrans %}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Emotions -->
+            {% if analysis.emotions %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-emoji-smile text-primary me-2"></i>
+                        {% trans "Detected Emotions" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for emotion, score in analysis.emotions.items %}
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-capitalize">{{ emotion }}</span>
+                                <span class="badge bg-info">{{ score|floatformat:3 }}</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ score|floatformat:0 }}%;">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Customer Intent -->
+            {% if analysis.intent %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bullseye text-primary me-2"></i>
+                        {% trans "Customer Intent" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h4 class="text-primary mb-2">{{ analysis.get_intent_display }}</h4>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {{ analysis.intent_confidence_percentage }}%;">
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {% trans "Confidence:" %} {{ analysis.intent_confidence|floatformat:3 }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Key Phrases -->
+            {% if analysis.key_phrases %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-quote text-primary me-2"></i>
+                        {% trans "Key Phrases" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for phrase in analysis.key_phrases %}
+                        <span class="badge bg-light text-white">{{ phrase }}</span>
+                        {% endfor %}
+i                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Urgency Indicators -->
+            {% if analysis.urgency_indicators %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-primary me-2"></i>
+                        {% trans "Urgency Indicators" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        {% for indicator in analysis.urgency_indicators %}
+                        <li class="mb-1">
+                            <i class="bi bi-dot text-warning me-1"></i>
+                            <small>{{ indicator }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Analysis Metadata -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i>
+                        {% trans "Analysis Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" width="40%">{% trans "AI Model" %}</th>
+                                <td>{{ analysis.model_used }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Model Version" %}</th>
+                                <td>{{ analysis.model_version }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Analyzed" %}</th>
+                                <td>{{ analysis.created_at|date:"M j, Y g:i A" }}</td>
+                            </tr>
+                            {% if analysis.feedback.requires_human_review %}
+                            <tr>
+                                <td colspan="2">
+                                    <div class="alert alert-warning py-2 mb-0">
+                                        <i class="bi bi-eye me-1"></i>
+                                        <small>{% trans "Requires Human Review" %}</small>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
