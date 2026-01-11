@@ -1,0 +1,424 @@
+<!-- organizations/organization-detail.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ organization.name }} - {% trans "Organization Details" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'accounts:org-list' %}" class="text-decoration-none">
+                    <i class="bi bi-house me-1"></i>{% trans "Organizations" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ organization.name|truncatechars:30 }}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Organization Header -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent py-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <!-- Organization Logo -->
+                        {% if organization.logo %}
+                        <img src="{{ organization.logo.url }}" 
+                             alt="{{ organization.name }}" 
+                             class="rounded me-4" 
+                             style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-primary rounded d-flex align-items-center justify-content-center me-4" 
+                             style="width: 80px; height: 80px;">
+                            <i class="bi bi-building text-white" style="font-size: 2rem;"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Organization Info -->
+                        <div>
+                            <h1 class="h3 mb-1">{{ organization.name }}</h1>
+                            {% if organization.website %}
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="bi bi-globe me-2"></i>
+                                <a href="{{ organization.website }}" 
+                                   target="_blank" 
+                                   class="text-muted text-decoration-none">
+                                    {{ organization.website }}
+                                </a>
+                            </div>
+                            {% endif %}
+                            <div class="mt-2">
+                                <span class="badge bg-{% if organization.is_active %}success{% else %}warning{% endif %}">
+                                    {% if organization.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                                </span>
+                                <span class="badge bg-secondary ms-1">
+                                    {{ organization.get_industry_display|default:_("No Industry") }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group" role="group">
+                        {% if can_manage %}
+                        <a href="{% url 'accounts:org-update' organization.pk %}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>
+                            {% trans "Edit" %}
+                        </a>
+                        <a href="{% url 'accounts:org-settings' organization.pk %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-gear me-2"></i>
+                            {% trans "Settings" %}
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Quick Actions Dropdown -->
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" 
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'feedback:feedback-create' organization.pk %}">
+                                        <i class="bi bi-plus-circle me-2"></i>{% trans "Add Feedback" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'surveys:survey-create' organization.pk %}">
+                                        <i class="bi bi-clipboard-data me-2"></i>{% trans "Add Survey" %}
+                                    </a>
+                                </li>
+                                 <li>
+                                    <a class="dropdown-item" href="{% url 'cx_analytics:sentiment-list' organization.pk %}">
+                                        <i class="bi bi-emoji-neutral me-2"></i></i>{% trans "Sentiment" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-eye me-2"></i>{% trans "View Analytics" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-graph-up me-2"></i>{% trans "Reports" %}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% if can_manage %}
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'accounts:org-delete' organization.pk %}">
+                                        <i class="bi bi-trash me-2"></i>{% trans "Delete Organization" %}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Column - Organization Details -->
+        <div class="col-lg-8">
+            <!-- Organization Information Card -->
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i>
+                        {% trans "Organization Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-muted" width="40%">{% trans "Industry" %}</th>
+                                        <td>
+                                            {% if organization.industry %}
+                                            <span class="fw-semibold">{{ organization.get_industry_display }}</span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Country" %}</th>
+                                        <td>
+                                            {% if organization.country %}
+                                            <span class="fw-semibold">{{ organization.get_country_display }}</span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Primary Language" %}</th>
+                                        <td>
+                                            <span class="fw-semibold">{{ organization.get_language_code_display|default:_("Not specified") }}</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-muted" width="40%">{% trans "Timezone" %}</th>
+                                        <td>
+                                            <span class="fw-semibold">{{ organization.timezone|default:"UTC" }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Created" %}</th>
+                                        <td>
+                                            <span class="fw-semibold">{{ organization.created_at|date:"F j, Y" }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Last Updated" %}</th>
+                                        <td>
+                                            <span class="fw-semibold">{{ organization.updated_at|date:"F j, Y" }}</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Description (if available) -->
+                    {% if organization.description %}
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-2">{% trans "Description" %}</h6>
+                        <p class="mb-0">{{ organization.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Subscription & Features -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gem text-primary me-2"></i>
+                        {% trans "Subscription & Features" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" width="50%">{% trans "Subscription Tier" %}</th>
+                                <td>
+                                    <span class="badge bg-{% if organization.subscription_tier == 'enterprise' %}primary{% elif organization.subscription_tier == 'professional' %}info{% elif organization.subscription_tier == 'basic' %}success{% else %}secondary{% endif %} fs-6">
+                                        {{ organization.get_subscription_tier_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Monthly Feedback Limit" %}</th>
+                                <td>
+                                    <span class="fw-semibold">
+                                        {% if organization.monthly_feedback_limit == 0 %}
+                                        {% trans "Unlimited" %}
+                                        {% else %}
+                                        {{ organization.monthly_feedback_limit|default:1000 }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "AI Analysis" %}</th>
+                                <td>
+                                    {% if organization.ai_analysis_enabled %}
+                                    <span class="badge bg-success">{% trans "Enabled" %}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{% trans "Disabled" %}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Status" %}</th>
+                                <td>
+                                    {% if organization.is_active %}
+                                    <span class="badge bg-success">{% trans "Active" %}</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">{% trans "Inactive" %}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Usage Statistics (if available) -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-muted mb-2">{% trans "This Month's Usage" %}</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small">{% trans "Feedback Analyzed" %}</span>
+                            <span class="fw-semibold">0 / {{ organization.monthly_feedback_limit }}</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Members Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people text-primary me-2"></i>
+                            {% trans "Team Members" %}
+                        </h5>
+                        {% if can_manage %}
+                        <a href="{% url 'accounts:org-member-add' organization.pk %}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            {% trans "Add Member" %}
+                        </a>
+                        
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if members %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">{% trans "User" %}</th>
+                                    <th>{% trans "Role" %}</th>
+                                    <th>{% trans "Status" %}</th>
+                                    <th>{% trans "Joined" %}</th>
+                                    {% if can_manage %}
+                                    <th class="text-end pe-4">{% trans "Actions" %}</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in members %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3">
+                                                <span class="text-white small fw-bold">
+                                                    {{ member.user.first_name|first|upper }}{{ member.user.last_name|first|upper }}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">
+                                                    {{ member.user.get_full_name|default:member.user.email }}
+                                                </div>
+                                                <small class="text-muted">{{ member.user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if member.role == 'owner' %}bg-primary
+                                            {% elif member.role == 'admin' %}bg-info
+                                            {% elif member.role == 'manager' %}bg-warning
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ member.get_role_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if member.is_active %}
+                                        <span class="badge bg-success">{% trans "Active" %}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{% trans "Inactive" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ member.created_at|date:"M j, Y" }}</small>
+                                    </td>
+                                    {% if can_manage %}
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'accounts:org-member-edit'  organization.pk member.pk %}" 
+                                               class="btn btn-outline-secondary" 
+                                               title="{% trans 'Edit Role' %}"
+                                               data-bs-toggle="tooltip">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            {% if member.role != 'owner' or members|length > 1 %}
+                                            <a href="{% url 'accounts:org-member-delete' organization.pk member.pk %}" 
+                                               class="btn btn-outline-danger"
+                                               title="{% trans 'Remove Member' %}"
+                                               data-bs-toggle="tooltip">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <i class="bi bi-people display-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">{% trans "No team members" %}</h5>
+                        <p class="text-muted mb-4">{% trans "Get started by adding your first team member." %}</p>
+                        {% if can_manage %}
+                        <a href="{% url 'accounts:member-add' organization.pk %}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            {% trans "Add Team Member" %}
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add confirmation for delete actions
+    const deleteButtons = document.querySelectorAll('a[href*="delete"]');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('{% trans "Are you sure you want to remove this member?" %}')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

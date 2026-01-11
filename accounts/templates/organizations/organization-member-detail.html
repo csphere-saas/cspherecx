@@ -1,0 +1,716 @@
+<!-- templates/organizations/organization-member-detail.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<section class="py-3"><p></p><br>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-list' %}">{% trans "Organizations" %}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{{ organization.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{% trans "Members" %}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ member.user.get_full_name|default:member.user.email }}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <h1 class="h3 mb-0 me-3">{% trans "Member Details" %}</h1>
+                        <span class="badge {% if member.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if member.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                        </span>
+                    </div>
+                    <p class="text-muted mb-0">
+                        {% trans "Viewing member profile for" %} <strong>{{ organization.name }}</strong>
+                    </p>
+                </div>
+                
+                <!-- Action Buttons -->
+                {% if can_edit_member or can_remove_member %}
+                <div class="mt-3 mt-md-0">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="memberActions" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-cog me-2"></i>{% trans "Actions" %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="memberActions">
+                            {% if can_edit_member %}
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-edit me-2"></i>{% trans "Edit Role" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% if member.is_active and can_remove_member %}
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'accounts:org-member-deactivate' pk=member.pk %}">
+                                    <i class="fas fa-user-slash me-2"></i>{% trans "Deactivate Member" %}
+                                </a>
+                            </li>
+                            {% elif not member.is_active and can_edit_member %}
+                            <li>
+                                <a class="dropdown-item text-success" href="{% url 'accounts:org-member-reactivate' pk=member.pk %}">
+                                    <i class="fas fa-user-check me-2"></i>{% trans "Reactivate Member" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% if member.user != request.user and user_membership.can_manage_users %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-envelope me-2"></i>{% trans "Send Message" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Profile Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>
+                        {% trans "Profile Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Avatar -->
+                        <div class="col-md-3 text-center mb-4 mb-md-0">
+                            <div class="avatar-xl rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto border mb-3">
+                                {% if member.user.first_name %}
+                                <span class="fs-1 fw-bold text-primary">
+                                    {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                                </span>
+                                {% else %}
+                                <span class="fs-1 fw-bold text-primary">
+                                    {{ member.user.email|first|upper }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="badge {% if member.role == 'owner' %}bg-warning{% elif member.role == 'admin' %}bg-info{% elif member.role == 'manager' %}bg-success{% elif member.role == 'analyst' %}bg-warning{% else %}bg-secondary{% endif %} fs-6 px-3 py-2">
+                                    {{ member.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Full Name" %}</label>
+                                    <p class="mb-0 fs-5">
+                                        {{ member.user.get_full_name|default:"—" }}
+                                        {% if member.user == request.user %}
+                                        <span class="badge bg-info ms-2">{% trans "You" %}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Email Address" %}</label>
+                                    <p class="mb-0 fs-5">
+                                        <a href="mailto:{{ member.user.email }}" class="text-decoration-none">
+                                            {{ member.user.email }}
+                                        </a>
+                                    </p>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Role Description" %}</label>
+                                    <p class="mb-0">
+                                        {% if member.role == 'owner' %}
+                                            {% trans "Has full control over the organization, including billing, settings, and member management." %}
+                                        {% elif member.role == 'admin' %}
+                                            {% trans "Can manage organization settings and members, but cannot delete the organization." %}
+                                        {% elif member.role == 'manager' %}
+                                            {% trans "Can manage users (except owners/admins) and view analytics. Cannot modify organization settings." %}
+                                        {% elif member.role == 'analyst' %}
+                                            {% trans "Can view feedback, analytics, and reports. Cannot modify settings or users." %}
+                                        {% else %}
+                                            {% trans "Has read-only access to organization data. Cannot make any changes." %}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Permissions" %}</label>
+                                    <div>
+                                        {% if member.can_manage_organization %}
+                                        <span class="badge bg-primary mb-1">
+                                            <i class="fas fa-cog me-1"></i>{% trans "Manage Organization" %}
+                                        </span>
+                                        {% endif %}
+                                        
+                                        {% if member.can_manage_users %}
+                                        <span class="badge bg-success mb-1">
+                                            <i class="fas fa-users me-1"></i>{% trans "Manage Users" %}
+                                        </span>
+                                        {% endif %}
+                                        
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-eye me-1"></i>{% trans "View Access" %}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Member Since" %}</label>
+                                    <p class="mb-0">
+                                        <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                                        {{ member.created_at|date:"F d, Y" }}
+                                    </p>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Last Updated" %}</label>
+                                    <p class="mb-0">
+                                        <i class="fas fa-history me-2 text-muted"></i>
+                                        {{ member.updated_at|date:"F d, Y" }}
+                                    </p>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted mb-1">{% trans "Status" %}</label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <div class="rounded-circle {% if member.is_active %}bg-success{% else %}bg-danger{% endif %}" style="width: 12px; height: 12px;"></div>
+                                        </div>
+                                        <div>
+                                            <span class="fw-medium {% if member.is_active %}text-success{% else %}text-danger{% endif %}">
+                                                {% if member.is_active %}
+                                                    {% trans "Active - Has full access" %}
+                                                {% else %}
+                                                    {% trans "Inactive - Access suspended" %}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permissions & Capabilities -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-shield me-2"></i>
+                        {% trans "Role Capabilities" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="mb-3">{% trans "What they can do:" %}</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    {% trans "View organization dashboard" %}
+                                </li>
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    {% trans "Access feedback and analytics" %}
+                                </li>
+                                {% if member.can_manage_users %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    {% trans "Invite and manage members" %}
+                                </li>
+                                {% endif %}
+                                {% if member.can_manage_organization %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    {% trans "Modify organization settings" %}
+                                </li>
+                                {% endif %}
+                                {% if member.role == 'owner' %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    {% trans "Delete organization" %}
+                                </li>
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    {% trans "Transfer ownership" %}
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <h6 class="mb-3">{% trans "Limitations:" %}</h6>
+                            <ul class="list-group list-group-flush">
+                                {% if member.role != 'owner' %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    {% trans "Cannot delete the organization" %}
+                                </li>
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    {% trans "Cannot transfer ownership" %}
+                                </li>
+                                {% endif %}
+                                {% if not member.can_manage_organization %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    {% trans "Cannot modify organization settings" %}
+                                </li>
+                                {% endif %}
+                                {% if not member.can_manage_users %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    {% trans "Cannot manage other members" %}
+                                </li>
+                                {% endif %}
+                                {% if member.role != 'owner' and member.role != 'admin' %}
+                                <li class="list-group-item border-0 px-0 py-2">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    {% trans "Cannot access billing information" %}
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-info-circle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading mb-2">{% trans "Need to change permissions?" %}</h6>
+                                    <p class="mb-0">
+                                        {% if can_edit_member %}
+                                        {% trans "You can update this member's role from the actions menu above." %}
+                                        {% else %}
+                                        {% trans "Contact an organization owner or administrator to request permission changes." %}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity (Placeholder) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        {% trans "Recent Activity" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">{% trans "Activity tracking coming soon" %}</h6>
+                        <p class="small text-muted mb-0">
+                            {% trans "Member activity and contributions will be displayed here." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Organization Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building me-2"></i>
+                        {% trans "Organization" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if organization.logo %}
+                        <img src="{{ organization.logo.url }}" alt="{{ organization.name }}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                            <span class="fw-bold text-primary">
+                                {{ organization.name|first|upper }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ organization.name }}</h6>
+                            <small class="text-muted">{{ organization.members.count }} {% trans "members" %}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "Industry" %}</span>
+                                <span class="fw-medium">{{ organization.get_industry_display|default:"—" }}</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "Country" %}</span>
+                                <span class="fw-medium">{{ organization.country|default:"—" }}</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "Created" %}</span>
+                                <span class="fw-medium">{{ organization.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'accounts:org-settings' pk=organization.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-cog me-2"></i>{% trans "View Organization Settings" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        {% trans "Role Distribution" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for role_item in role_distribution %}
+                        <div class="list-group-item border-0 px-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge {% if role_item.role == 'owner' %}bg-warning{% elif role_item.role == 'admin' %}bg-info{% elif role_item.role == 'manager' %}bg-success{% elif role_item.role == 'analyst' %}bg-warning{% else %}bg-secondary{% endif %} me-2">
+                                        {{ role_item.role|title }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="fw-medium">{{ role_item.count }}</span>
+                                    <small class="text-muted ms-1">{% trans "members" %}</small>
+                                </div>
+                            </div>
+                            {% if role_item.role == member.role %}
+                            <div class="mt-1">
+                                <small class="text-success">
+                                    <i class="fas fa-user me-1"></i>
+                                    {% trans "This member" %}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support & Help -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        {% trans "Need Help?" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="mb-2">{% trans "Managing Members" %}</h6>
+                        <p class="small text-muted mb-2">
+                            {% trans "Learn how to effectively manage team members and their permissions." %}
+                        </p>
+                        <a href="#" class="small">
+                            <i class="fas fa-external-link-alt me-1"></i>{% trans "View guide" %}
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="mb-2">{% trans "Role Permissions" %}</h6>
+                        <p class="small text-muted mb-2">
+                            {% trans "Understand what each role can and cannot do in your organization." %}
+                        </p>
+                        <a href="#" class="small">
+                            <i class="fas fa-external-link-alt me-1"></i>{% trans "Learn more" %}
+                        </a>
+                    </div>
+                    
+                    <div class="pt-3 border-top">
+                        <a href="#" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="fas fa-life-ring me-2"></i>{% trans "Contact Support" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-xl {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .avatar-xl span {
+        font-size: 3rem;
+    }
+    
+    .badge.fs-6 {
+        font-size: 1rem !important;
+    }
+    
+    .card {
+        border-radius: 10px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .list-group-item {
+        border-color: rgba(0,0,0,0.08);
+    }
+    
+    .list-group-flush .list-group-item:last-child {
+        border-bottom: 0;
+    }
+    
+    .dropdown-menu {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    @media (max-width: 991.98px) {
+        .avatar-xl {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .avatar-xl span {
+            font-size: 2.5rem;
+        }
+        
+        .card-body .row .col-md-6 {
+            margin-bottom: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .avatar-xl {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .avatar-xl span {
+            font-size: 2rem;
+        }
+        
+        .d-flex.flex-md-row {
+            flex-direction: column !important;
+        }
+        
+        .dropdown-menu {
+            width: 100%;
+        }
+        
+        .btn-outline-secondary {
+            width: 100%;
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .card-body .row > div {
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-body .row > div:last-child {
+            margin-bottom: 0;
+        }
+        
+        .badge.fs-6 {
+            font-size: 0.875rem !important;
+            padding: 0.5rem 0.75rem;
+        }
+    }
+    
+    /* Print styles */
+    @media print {
+        .dropdown,
+        .btn,
+        .alert,
+        .sidebar-column {
+            display: none !important;
+        }
+        
+        .col-lg-8 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Print functionality
+        const printButton = document.createElement('button');
+        printButton.className = 'btn btn-outline-secondary btn-sm d-print-none';
+        printButton.innerHTML = '<i class="fas fa-print me-2"></i>{% trans "Print" %}';
+        printButton.addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Add print button to header
+        const headerActions = document.querySelector('.d-flex.flex-column.flex-md-row .mt-3.mt-md-0');
+        if (headerActions) {
+            headerActions.appendChild(printButton);
+        }
+        
+        // Copy email to clipboard
+        const emailLinks = document.querySelectorAll('a[href^="mailto:"]');
+        emailLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    return; // Allow normal Ctrl+Click behavior
+                }
+                
+                const email = this.href.replace('mailto:', '');
+                navigator.clipboard.writeText(email).then(() => {
+                    // Show temporary notification
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check me-1"></i>{% trans "Copied!" %}';
+                    this.classList.add('text-success');
+                    
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.classList.remove('text-success');
+                    }, 2000);
+                });
+                
+                e.preventDefault();
+            });
+        });
+        
+        // Responsive table handling for activity section
+        const activityTables = document.querySelectorAll('.table-responsive');
+        activityTables.forEach(table => {
+            const wrapper = table.parentElement;
+            const observer = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    if (entry.contentRect.width < 576) {
+                        table.classList.add('table-sm');
+                    } else {
+                        table.classList.remove('table-sm');
+                    }
+                }
+            });
+            
+            if (wrapper) {
+                observer.observe(wrapper);
+            }
+        });
+        
+        // Tooltips for permission badges
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Mobile menu toggle enhancement
+        if (window.innerWidth < 768) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => {
+                dropdown.addEventListener('shown.bs.dropdown', function() {
+                    const dropdownMenu = this.querySelector('.dropdown-menu');
+                    if (dropdownMenu) {
+                        dropdownMenu.style.maxHeight = 'calc(100vh - 200px)';
+                        dropdownMenu.style.overflowY = 'auto';
+                    }
+                });
+            });
+        }
+        
+        // Highlight current user's role in role distribution
+        const currentRoleItems = document.querySelectorAll('.list-group-item');
+        currentRoleItems.forEach(item => {
+            const roleText = item.querySelector('.badge')?.textContent?.trim().toLowerCase();
+            if (roleText === '{{ member.role }}') {
+                item.classList.add('bg-light', 'border-start', 'border-start-3', 'border-primary');
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Alt + P for print
+            if (e.altKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            
+            // Escape key closes dropdowns
+            if (e.key === 'Escape') {
+                const openDropdowns = document.querySelectorAll('.dropdown.show');
+                openDropdowns.forEach(dropdown => {
+                    const toggle = dropdown.querySelector('.dropdown-toggle');
+                    if (toggle) {
+                        bootstrap.Dropdown.getInstance(toggle)?.hide();
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

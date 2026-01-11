@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+{% load static i18n humanize %}
+
+{% block title %}{% trans "Team Members" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+    
+    <div class="container">
+        <!-- Page Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+            <div class="d-flex align-items-center mb-3 mb-md-0">
+                <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+                    <i class="bi bi-people text-primary fs-4"></i>
+                </div>
+                <div>
+                    <h1 class="h2 mb-1">{% trans "Team Members" %}</h1>
+                    <p class="text-muted mb-0">{{ organization.name }}</p>
+                </div>
+            </div>
+            
+            {% if can_manage_members %}
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'accounts:org-member-add' pk=organization.pk %}" 
+                   class="btn btn-primary">
+                    <i class="bi bi-person-plus me-2"></i>
+                    {% trans "Add Member" %}
+                </a>
+                <a href="{% url 'accounts:org-member-invite' pk=organization.pk %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-envelope me-2"></i>
+                    {% trans "Invite by Email" %}
+                </a>
+                <a href="{% url 'accounts:org-detail' pk=organization.pk %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    {% trans "Back to Organization" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+                                <i class="bi bi-people text-primary fs-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted mb-1">{% trans "Total Members" %}</p>
+                                <h3 class="mb-0">{{ total_members }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 p-3 rounded me-3">
+                                <i class="bi bi-award text-warning fs-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted mb-1">{% trans "Owners" %}</p>
+                                <h3 class="mb-0">{{ owners_count }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-danger bg-opacity-10 p-3 rounded me-3">
+                                <i class="bi bi-shield-check text-danger fs-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted mb-1">{% trans "Admins & Managers" %}</p>
+                                <h3 class="mb-0">{{ owner_managers_count }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary bg-opacity-10 p-3 rounded me-3">
+                                <i class="bi bi-eye text-secondary fs-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted mb-1">{% trans "Viewers & Analysts" %}</p>
+                                <h3 class="mb-0">{{ viewers_analysts_count }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{% trans "Search & Filter" %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">{% trans "Search Members" %}</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   name="search" 
+                                   id="search" 
+                                   value="{{ search_query }}"
+                                   class="form-control" 
+                                   placeholder="{% trans 'Search by name, email, or role...' %}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="role" class="form-label">{% trans "Filter by Role" %}</label>
+                        <select name="role" id="role" class="form-select">
+                            <option value="">{% trans "All Roles" %}</option>
+                            {% for role_value, role_label in role_choices %}
+                                <option value="{{ role_value }}" {% if role_filter == role_value %}selected{% endif %}>
+                                    {{ role_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'accounts:org-member-list' pk=organization.id %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>
+                                {% trans "Clear Filters" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-filter me-2"></i>
+                                {% trans "Apply Filters" %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Members Table Card -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">{% trans "Team Members" %}</h5>
+                    <p class="card-subtitle text-muted mb-0 mt-1">
+                        {% trans "All active members in this organization" %}
+                    </p>
+                </div>
+                <div class="text-muted">
+                    {{ members.paginator.count }} {% trans "members found" %}
+                </div>
+            </div>
+            
+            {% if members %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Member" %}</th>
+                            <th>{% trans "Role" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Joined" %}</th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-3">
+                                        <div class="avatar-initial bg-secondary rounded-circle d-flex align-items-center justify-content-center"
+                                             style="width: 40px; height: 40px;">
+                                            {% if member.user.first_name or member.user.last_name %}
+                                                <span class="text-white fw-semibold">
+                                                    {{ member.user.first_name|first|upper }}{{ member.user.last_name|first|upper }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-white fw-semibold">
+                                                    {{ member.user.email|first|upper }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">
+                                            {% if member.user.first_name or member.user.last_name %}
+                                                {{ member.user.first_name }} {{ member.user.last_name }}
+                                            {% else %}
+                                                {% trans "No name set" %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-muted small">{{ member.user.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if member.role == 'owner' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-award me-1"></i>
+                                    {{ member.get_role_display }}
+                                </span>
+                                {% elif member.role == 'admin' %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    {{ member.get_role_display }}
+                                </span>
+                                {% elif member.role == 'manager' %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    {{ member.get_role_display }}
+                                </span>
+                                {% elif member.role == 'analyst' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-graph-up me-1"></i>
+                                    {{ member.get_role_display }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-eye me-1"></i>
+                                    {{ member.get_role_display }}
+                                </span>
+                                {% endif %}
+                                
+                                {% if member.user == user_membership.user %}
+                                <span class="badge bg-info ms-1">
+                                    {% trans "You" %}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if member.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% trans "Active" %}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    {% trans "Inactive" %}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ member.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'accounts:org-member-detail' org_pk=organization.pk member_pk=member.pk %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="{% trans 'View Details' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    
+                                    {% if can_manage_members %}
+                                        {% if member.user != user_membership.user %}
+                                            <a href="{% url 'accounts:org-member-edit' org_pk=organization.pk member_pk=member.pk %}" 
+                                               class="btn btn-sm btn-outline-info" 
+                                               title="{% trans 'Edit Role' %}">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            
+                                            {% if member.role != 'owner' or user_membership.role == 'owner' %}
+                                                <button onclick="openDeactivateModal('{{ organization.pk }}', '{{ member.pk }}', '{{ member.user.email }}')" 
+                                                        class="btn btn-sm btn-outline-warning" 
+                                                        title="{% trans 'Deactivate' %}">
+                                                    <i class="bi bi-person-x"></i>
+                                                </button>
+                                            {% endif %}
+                                            
+                                            {% if member.role != 'owner' or user_membership.role == 'owner' %}
+                                                {% if member.user != user_membership.user %}
+                                                    <button onclick="openDeleteModal('{{ organization.pk }}', '{{ member.pk }}', '{{ member.user.email }}')" 
+                                                            class="btn btn-sm btn-outline-danger" 
+                                                            title="{% trans 'Remove' %}">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if members.has_other_pages %}
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0 text-muted">
+                            {% trans "Showing" %} {{ members.start_index }} - {{ members.end_index }} {% trans "of" %} {{ members.paginator.count }} {% trans "results" %}
+                        </p>
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if members.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ members.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in members.paginator.page_range %}
+                                {% if members.number == i %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                                {% elif i > members.number|add:"-3" and i < members.number|add:"3" %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">
+                                        {{ i }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if members.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ members.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <!-- Empty State -->
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="card-title">{% trans "No members found" %}</h5>
+                <p class="card-text text-muted mb-4">
+                    {% if search_query or role_filter %}
+                        {% trans "Try adjusting your search or filter criteria." %}
+                    {% else %}
+                        {% trans "Get started by adding your first team member." %}
+                    {% endif %}
+                </p>
+                {% if can_manage_members %}
+                <a href="{% url 'accounts:org-member-add' pk=organization.pk %}" 
+                   class="btn btn-primary">
+                    <i class="bi bi-person-plus me-2"></i>
+                    {% trans "Add First Member" %}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Role Legend -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{% trans "Role Permissions" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="badge bg-warning text-dark me-2">
+                                <i class="bi bi-award"></i>
+                            </span>
+                            <span class="fw-semibold">{% trans "Owner" %}</span>
+                        </div>
+                        <ul class="list-unstyled text-muted small mb-0">
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Full organization control" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Manage all members" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Transfer ownership" %}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="badge bg-danger me-2">
+                                <i class="bi bi-shield-check"></i>
+                            </span>
+                            <span class="fw-semibold">{% trans "Administrator" %}</span>
+                        </div>
+                        <ul class="list-unstyled text-muted small mb-0">
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Manage organization settings" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Add/remove members" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Access all data" %}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="badge bg-primary me-2">
+                                <i class="bi bi-person-badge"></i>
+                            </span>
+                            <span class="fw-semibold">{% trans "Manager" %}</span>
+                        </div>
+                        <ul class="list-unstyled text-muted small mb-0">
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Manage team members" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "View all feedback" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Assign tasks" %}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="badge bg-success me-2">
+                                <i class="bi bi-graph-up"></i>
+                            </span>
+                            <span class="fw-semibold">{% trans "Analyst" %}</span>
+                        </div>
+                        <ul class="list-unstyled text-muted small mb-0">
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "View analytics & reports" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Analyze feedback data" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Generate insights" %}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="badge bg-secondary me-2">
+                                <i class="bi bi-eye"></i>
+                            </span>
+                            <span class="fw-semibold">{% trans "Viewer" %}</span>
+                        </div>
+                        <ul class="list-unstyled text-muted small mb-0">
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "View feedback & customers" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Read-only access" %}</li>
+                            <li><i class="bi bi-check text-success me-1"></i> {% trans "Basic reporting" %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deactivate Member Modal -->
+    <div class="modal fade" id="deactivateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning bg-opacity-10">
+                    <h5 class="modal-title text-warning">
+                        <i class="bi bi-person-x me-2"></i>
+                        {% trans "Deactivate Member" %}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Are you sure you want to deactivate this member?" %}</p>
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="bi bi-exclamation-circle"></i>
+                            </div>
+                            <div>
+                                <span id="deactivateMemberEmail" class="fw-semibold"></span> {% trans "will lose access to this organization." %}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {% trans "You can reactivate them at any time. Their data will be preserved." %}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        {% trans "Cancel" %}
+                    </button>
+                    <form id="deactivateForm" method="post" action="" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning">
+                            {% trans "Deactivate Member" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Member Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger bg-opacity-10">
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        {% trans "Remove Member" %}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "This action cannot be undone. This will permanently remove the member from the organization." %}</p>
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="bi bi-exclamation-circle"></i>
+                            </div>
+                            <div>
+                                <span id="deleteMemberEmail" class="fw-semibold"></span> {% trans "will lose all access immediately." %}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {% trans "All permissions will be revoked. They can only be re-added by an administrator." %}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        {% trans "Cancel" %}
+                    </button>
+                    <form id="deleteForm" method="post" action="" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            {% trans "Remove Member" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Deactivate member modal
+    function openDeactivateModal(orgId, memberId, memberEmail) {
+        const deactivateForm = document.getElementById('deactivateForm');
+        deactivateForm.action = `/en/organizations/${orgId}/members/${memberId}/deactivate/`;
+        
+        const memberEmailSpan = document.getElementById('deactivateMemberEmail');
+        memberEmailSpan.textContent = `"${memberEmail}"`;
+        
+        const modal = new bootstrap.Modal(document.getElementById('deactivateModal'));
+        modal.show();
+    }
+    
+    // Delete member modal
+    function openDeleteModal(orgId, memberId, memberEmail) {
+        const deleteForm = document.getElementById('deleteForm');
+        deleteForm.action = `/en/organizations/${orgId}/members/${memberId}/delete/`;
+        
+        const memberEmailSpan = document.getElementById('deleteMemberEmail');
+        memberEmailSpan.textContent = `"${memberEmail}"`;
+        
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+    
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

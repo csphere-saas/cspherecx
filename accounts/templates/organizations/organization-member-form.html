@@ -1,0 +1,306 @@
+<!-- organizations/organization-member-form.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'accounts:org-list' %}" class="text-decoration-none">
+                    <i class="bi bi-house me-1"></i>{% trans "Organizations" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'accounts:org-detail' organization.pk %}" class="text-decoration-none">
+                    {{ organization.name|truncatechars:20 }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-plus me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{{ page_title }}</h4>
+                            <p class="mb-0 opacity-75">{{ organization.name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate id="member-form">
+                        {% csrf_token %}
+                        
+                        <!-- Non-field Errors -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Member Information Section -->
+                        <div class="mb-4">
+                            <h5 class="mb-3 text-primary border-bottom pb-2">
+                                <i class="bi bi-person-badge me-2"></i>
+                                {% trans "Member Information" %}
+                            </h5>
+                            
+                            <!-- Email Field (only for new members) -->
+                            {% if not editing %}
+                            <div class="mb-4">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.email.label }} *
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    {% for error in form.email.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {% trans "Enter the email address of an existing user in the system" %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- Display current user info when editing -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">{% trans "Current User" %}</label>
+                                <div class="form-control bg-light py-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <span class="text-white small fw-bold">
+                                                {{ form.instance.user.first_name|first|upper }}{{ form.instance.user.last_name|first|upper }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">
+                                                {{ form.instance.user.get_full_name|default:form.instance.user.email }}
+                                            </div>
+                                            <small class="text-muted">{{ form.instance.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Role Field -->
+                            <div class="mb-4">
+                                <label for="{{ form.role.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.role.label }} *
+                                </label>
+                                {{ form.role }}
+                                {% if form.role.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    {% for error in form.role.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    {% trans "Select the appropriate role and permissions for this team member" %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Role Permissions Guide -->
+                        <div class="card border-0 bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary mb-3">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    {% trans "Role Permissions Guide" %}
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <strong class="text-primary">{% trans "Owner" %}</strong>
+                                            <p class="small mb-1 text-muted">{% trans "Full administrative access" %}</p>
+                                            <ul class="small text-muted mb-0">
+                                                <li>{% trans "Manage organization settings" %}</li>
+                                                <li>{% trans "Add/remove members" %}</li>
+                                                <li>{% trans "Delete organization" %}</li>
+                                            </ul>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong class="text-info">{% trans "Administrator" %}</strong>
+                                            <p class="small mb-1 text-muted">{% trans "Full management access" %}</p>
+                                            <ul class="small text-muted mb-0">
+                                                <li>{% trans "Manage members and roles" %}</li>
+                                                <li>{% trans "Edit organization details" %}</li>
+                                                <li>{% trans "Access all features" %}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <strong class="text-warning">{% trans "Manager" %}</strong>
+                                            <p class="small mb-1 text-muted">{% trans "Team management access" %}</p>
+                                            <ul class="small text-muted mb-0">
+                                                <li>{% trans "Manage team members" %}</li>
+                                                <li>{% trans "Access analytics and reports" %}</li>
+                                                <li>{% trans "Create and manage projects" %}</li>
+                                            </ul>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong class="text-success">{% trans "Analyst" %}</strong>
+                                            <p class="small mb-1 text-muted">{% trans "Data analysis access" %}</p>
+                                            <ul class="small text-muted mb-0">
+                                                <li>{% trans "View and analyze data" %}</li>
+                                                <li>{% trans "Create reports and dashboards" %}</li>
+                                                <li>{% trans "Export data" %}</li>
+                                            </ul>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong class="text-secondary">{% trans "Viewer" %}</strong>
+                                            <p class="small mb-1 text-muted">{% trans "Read-only access" %}</p>
+                                            <ul class="small text-muted mb-0">
+                                                <li>{% trans "View data and reports" %}</li>
+                                                <li>{% trans "Access shared dashboards" %}</li>
+                                                <li>{% trans "No editing capabilities" %}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4">
+                            <a href="{{ cancel_url }}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4" id="submit-btn">
+                                <i class="bi bi-check-circle me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('member-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const emailField = document.getElementById('{{ form.email.id_for_label }}');
+    const roleField = document.getElementById('{{ form.role.id_for_label }}');
+
+    // Form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Basic validation
+            let hasErrors = false;
+
+            {% if not editing %}
+            // Validate email field for new members
+            if (emailField && !emailField.value.trim()) {
+                e.preventDefault();
+                emailField.classList.add('is-invalid');
+                emailField.focus();
+                hasErrors = true;
+            }
+            {% endif %}
+
+            // Validate role field
+            if (roleField && !roleField.value) {
+                e.preventDefault();
+                roleField.classList.add('is-invalid');
+                if (!hasErrors) {
+                    roleField.focus();
+                }
+                hasErrors = true;
+            }
+
+            // Disable submit button to prevent double submission
+            if (submitBtn && !hasErrors) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Saving..." %}';
+            }
+        });
+    }
+
+    // Real-time validation
+    {% if not editing %}
+    if (emailField) {
+        emailField.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+                // Basic email format validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailRegex.test(this.value)) {
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                }
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    }
+    {% endif %}
+
+    if (roleField) {
+        roleField.addEventListener('change', function() {
+            if (this.value) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    }
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .is-valid {
+        border-color: #198754 !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

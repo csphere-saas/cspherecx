@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "CX Analytics - AI-Powered Customer Experience Intelligence" %}{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+
+<!-- Hero Section -->
+<section id="hero" class="hero-section">
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <div class="badge bg-light text-primary mb-3">
+                        <i class="bi bi-stars me-1"></i>
+                        {% trans "AI-Powered Platform" %}
+                    </div>
+                    
+                    <h1 class="hero-title">
+                        {% trans "Transform Customer Feedback into" %}
+                        <span class="text-primary">{% trans "Strategic Insights" %}</span>
+                    </h1>
+                    
+                    <p class="hero-subtitle">
+                        {% trans "CX Analytics uses advanced AI to analyze customer feedback across all channels, identify emerging trends, and provide actionable insights that drive business growth." %}
+                    </p>
+                    
+                    <div class="hero-cta">
+                        <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg me-3">
+                            {% trans "Start Free Trial" %}
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                        <a href="#demo" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-play-circle me-2"></i>
+                            {% trans "Watch Demo" %}
+                        </a>
+                    </div>
+                    
+                    <div class="hero-stats mt-5">
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="stat">
+                                    <div class="stat-number">98%</div>
+                                    <div class="stat-label">{% trans "Accuracy" %}</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat">
+                                    <div class="stat-number">5min</div>
+                                    <div class="stat-label">{% trans "Setup" %}</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat">
+                                    <div class="stat-number">24/7</div>
+                                    <div class="stat-label">{% trans "Support" %}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="hero-visual">
+                    <div class="dashboard-preview">
+                        <img src="{% static 'images/dashboard-preview.png' %}" alt="{% trans 'CX Analytics Dashboard' %}" class="img-fluid">
+                    </div>
+                    <div class="floating-card card-1">
+                        <i class="bi bi-emoji-smile text-success"></i>
+                        <span>{% trans "Positive Sentiment Detected" %}</span>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="bi bi-tags text-primary"></i>
+                        <span>{% trans "Theme Identified" %}</span>
+                    </div>
+                    <div class="floating-card card-3">
+                        <i class="bi bi-graph-up text-warning"></i>
+                        <span>{% trans "NPS +15 Points" %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="section features-section bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="section-title">{% trans "Powerful Features for Customer Intelligence" %}</h2>
+                <p class="section-subtitle">
+                    {% trans "Discover how our AI-powered platform transforms raw customer feedback into actionable business intelligence." %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon bg-primary">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <h4>{% trans "AI-Powered Analysis" %}</h4>
+                    <p>{% trans "Automated sentiment analysis, theme detection, and emotion recognition across all customer feedback channels." %}</p>
+                    <ul class="feature-list">
+                        <li>{% trans "Real-time sentiment scoring" %}</li>
+                        <li>{% trans "Automatic theme clustering" %}</li>
+                        <li>{% trans "Multi-language support" %}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon bg-success">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h4>{% trans "Real-time Dashboards" %}</h4>
+                    <p>{% trans "Comprehensive dashboards with live metrics, trend analysis, and customizable reporting." %}</p>
+                    <ul class="feature-list">
+                        <li>{% trans "Live NPS tracking" %}</li>
+                        <li>{% trans "Sentiment trends" %}</li>
+                        <li>{% trans "Custom KPIs" %}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon bg-warning">
+                        <i class="bi bi-lightbulb"></i>
+                    </div>
+                    <h4>{% trans "Strategic Insights" %}</h4>
+                    <p>{% trans "AI-generated business recommendations and actionable insights for strategic decision-making." %}</p>
+                    <ul class="feature-list">
+                        <li>{% trans "Root cause analysis" %}</li>
+                        <li>{% trans "Impact-severity matrix" %}</li>
+                        <li>{% trans "Action plan suggestions" %}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon bg-info">
+                        <i class="bi bi-pie-chart"></i>
+                    </div>
+                    <h4>{% trans "Advanced Analytics" %}</h4>
+                    <p>{% trans "Deep dive into customer data with advanced segmentation, trend forecasting, and predictive analytics." %}</p>
+                    <ul class="feature-list">
+                        <li>{% trans "Customer segmentation" %}</li>
+                        <li>{% trans "Trend forecasting" %}</li>
+                        <li>{% trans "Predictive modeling" %}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon bg-danger">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h4>{% trans "Enterprise Security" %}</h4>
+                    <p>{% trans "Bank-level security with SOC 2 compliance, data encryption, and role-based access control." %}</p>
+                    <ul class="feature-list">
+                        <li>{% trans "SOC 2 compliant" %}</li>
+                        <li>{% trans "End-to-end encryption" %}</li>
+                        <li>{% trans "GDPR ready" %}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon bg-secondary">
+                        <i class="bi bi-puzzle"></i>
+                    </div>
+                    <h4>{% trans "Easy Integration" %}</h4>
+                    <p>{% trans "Seamless integration with your existing tools through RESTful API and pre-built connectors." %}</p>
+                    <ul class="feature-list">
+                        <li>{% trans "RESTful API" %}</li>
+                        <li>{% trans "Pre-built connectors" %}</li>
+                        <li>{% trans "Webhook support" %}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Solutions Section -->
+<section id="solutions" class="section solutions-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="section-title">{% trans "Solutions for Every Business" %}</h2>
+                <p class="section-subtitle">
+                    {% trans "Tailored solutions designed to meet the unique needs of your industry and business size." %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="solution-card">
+                    <div class="solution-icon">
+                        <i class="bi bi-cloud-check"></i>
+                    </div>
+                    <h5>{% trans "SaaS Companies" %}</h5>
+                    <p>{% trans "Reduce churn and improve product-market fit with real-time customer feedback analysis." %}</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="solution-card">
+                    <div class="solution-icon">
+                        <i class="bi bi-cart-check"></i>
+                    </div>
+                    <h5>{% trans "E-commerce" %}</h5>
+                    <p>{% trans "Boost conversion rates and customer loyalty by understanding buyer sentiment and preferences." %}</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="solution-card">
+                    <div class="solution-icon">
+                        <i class="bi bi-bank"></i>
+                    </div>
+                    <h5>{% trans "Financial Services" %}</h5>
+                    <p>{% trans "Ensure compliance and build trust with comprehensive customer sentiment monitoring." %}</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="solution-card">
+                    <div class="solution-icon">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                    <h5>{% trans "Healthcare" %}</h5>
+                    <p>{% trans "Improve patient experience and service quality with sentiment analysis and feedback tracking." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section id="testimonials" class="section testimonials-section bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="section-title">{% trans "Trusted by Industry Leaders" %}</h2>
+                <p class="section-subtitle">
+                    {% trans "See how companies are transforming their customer experience with CX Analytics." %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-lg-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <div class="stars mb-3">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <p class="testimonial-text">
+                            "{% trans 'CX Analytics helped us reduce customer churn by 28% in just 3 months. The AI insights are incredibly accurate and actionable.' %}"
+                        </p>
+                    </div>
+                    <div class="testimonial-author">
+                        <img src="{% static 'images/avatar1.jpg' %}" alt="Sarah Chen" class="author-avatar">
+                        <div class="author-info">
+                            <strong>Sarah Chen</strong>
+                            <span>{% trans "VP Customer Experience" %}</span>
+                            <span>TechStart Inc</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <div class="stars mb-3">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <p class="testimonial-text">
+                            "{% trans 'The automatic theme detection identified emerging issues we would have missed. Our response time improved by 65%.' %}"
+                        </p>
+                    </div>
+                    <div class="testimonial-author">
+                        <img src="{% static 'images/avatar2.jpg' %}" alt="Marcus Johnson" class="author-avatar">
+                        <div class="author-info">
+                            <strong>Marcus Johnson</strong>
+                            <span>{% trans "Customer Success Director" %}</span>
+                            <span>CloudScale Solutions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <div class="stars mb-3">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <p class="testimonial-text">
+                            "{% trans 'Implementation was seamless and the insights have been invaluable for our product roadmap decisions.' %}"
+                        </p>
+                    </div>
+                    <div class="testimonial-author">
+                        <img src="{% static 'images/avatar3.jpg' %}" alt="Elena Rodriguez" class="author-avatar">
+                        <div class="author-info">
+                            <strong>Elena Rodriguez</strong>
+                            <span>{% trans "Head of Product" %}</span>
+                            <span>InnovateLabs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="section cta-section bg-primary text-white">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h2 class="cta-title">{% trans "Ready to Transform Your Customer Experience?" %}</h2>
+                <p class="cta-subtitle">
+                    {% trans "Join thousands of companies using CX Analytics to drive growth through customer intelligence." %}
+                </p>
+                <div class="cta-buttons mt-4">
+                    <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg me-3">
+                        {% trans "Start Free Trial" %}
+                    </a>
+                    <a href="#contact" class="btn btn-outline-light btn-lg">
+                        {% trans "Contact Sales" %}
+                    </a>
+                </div>
+                <p class="cta-note mt-3">
+                    <i class="bi bi-shield-check me-1"></i>
+                    {% trans "No credit card required • 14-day free trial • Setup in 5 minutes" %}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer bg-dark text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="footer-brand">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <strong>CX Analytics</strong>
+                </div>
+                <p class="footer-description">
+                    {% trans "AI-powered customer experience intelligence platform that transforms feedback into actionable insights." %}
+                </p>
+                <div class="social-links">
+                    <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
+                    <a href="#" class="social-link"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="social-link"><i class="bi bi-github"></i></a>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 mb-4">
+                <h6>{% trans "Product" %}</h6>
+                <ul class="footer-links">
+                    <li><a href="#features">{% trans "Features" %}</a></li>
+                    <li><a href="#solutions">{% trans "Solutions" %}</a></li>
+                    <li><a href="#pricing">{% trans "Pricing" %}</a></li>
+                    <li><a href="#testimonials">{% trans "Testimonials" %}</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 mb-4">
+                <h6>{% trans "Company" %}</h6>
+                <ul class="footer-links">
+                    <li><a href="{% url 'accounts:about' %}">{% trans "About" %}</a></li>
+                    <li><a href="{% url 'accounts:careers' %}">{% trans "Careers" %}</a></li>
+                    <li><a href="{% url 'accounts:contact' %}">{% trans "Contact" %}</a></li>
+                   
+                </ul>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 mb-4">
+                <h6>{% trans "Legal" %}</h6>
+                <ul class="footer-links">
+                    <li><a href="{% url 'accounts:privacy' %}">{% trans "Privacy" %}</a></li>
+                    <li><a href="{% url 'accounts:terms' %}">{% trans "Terms" %}</a></li>
+                   
+                    <li><a href="{% url 'accounts:compliance' %}">{% trans "Compliance" %}</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-2 mb-4">
+                <h6>{% trans "Support" %}</h6>
+                <ul class="footer-links">
+                    <li><a href="{% url 'accounts:help' %}">{% trans "Help Center" %}</a></li>
+                    <li><a href="{% url 'accounts:docs' %}">{% trans "Documentation" %}</a></li>
+                    <li><a href="{% url 'accounts:api-docs' %}">{% trans "API" %}</a></li>
+                    <li><a href="{% url 'accounts:status' %}">{% trans "Status" %}</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; {% now "Y" %} CX Analytics. {% trans "All rights reserved." %}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">
+                        {% trans "Made with" %} <i class="bi bi-heart-fill text-danger"></i> {% trans "for better customer experiences" %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}

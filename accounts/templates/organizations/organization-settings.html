@@ -1,0 +1,839 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans "Organization Settings" %} - {{ organization.name }}{% endblock %}
+
+{% block page_title %}
+
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center mb-4">
+        <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+            <i class="fas fa-cog text-primary fs-4"></i>
+        </div>
+        <div>
+            <h1 class="h2 mb-1">{% trans "Organization Settings" %}</h1>
+            <p class="text-muted mb-0">{{ organization.name }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="py-5"><p></p><br>
+<div class="container-fluid px-4">
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="settingsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>{% trans "Members Settings" %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">
+                <i class="fas fa-star me-2"></i>{% trans "CX Features Settings" %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+                <i class="fas fa-chart-line me-2"></i>{% trans "Analytics" %}
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="settingsTabContent">
+        <!-- Members Settings Tab -->
+        <div class="tab-pane fade show active" id="members" role="tabpanel" tabindex="0">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-users me-2"></i>{% trans "Members Management" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                
+                                <!-- Form Errors -->
+                                {% if form.errors %}
+                                <div class="alert alert-danger mb-4">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-exclamation-circle me-3"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="alert-heading">{% trans "Form Errors" %}</h6>
+                                            <p class="mb-0">{% trans "Please correct the errors below." %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Messages -->
+                                {% if messages %}
+                                <div class="mb-4">
+                                    {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                        <div class="d-flex align-items-center">
+                                            {% if message.tags == 'success' %}
+                                            <i class="fas fa-check-circle me-3"></i>
+                                            {% elif message.tags == 'error' %}
+                                            <i class="fas fa-exclamation-circle me-3"></i>
+                                            {% elif message.tags == 'warning' %}
+                                            <i class="fas fa-exclamation-triangle me-3"></i>
+                                            {% else %}
+                                            <i class="fas fa-info-circle me-3"></i>
+                                            {% endif %}
+                                            <span>{{ message }}</span>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Basic Information -->
+                                <div class="mb-4">
+                                    <h6 class="mb-3">{% trans "Basic Information" %}</h6>
+                                    
+                                    <!-- Organization Name -->
+                                    <div class="mb-3">
+                                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                                            {% trans "Organization Name" %} *
+                                            {{organization.name}}
+                                        </label>
+                                        {{ form.name }}
+                                        {% if form.name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.name.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Logo Upload -->
+                                    <div class="mb-3">
+                                        <label for="{{ form.logo.id_for_label }}" class="form-label">
+                                            {% trans "Logo" %}
+                                        </label>
+                                        <div class="d-flex align-items-center gap-3">
+                                            {% if organization.logo %}
+                                            <div class="flex-shrink-0">
+                                                <img src="{{ organization.logo.url }}" 
+                                                     alt="{{ organization.name }}" 
+                                                     class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </div>
+                                            {% endif %}
+                                            <div class="flex-grow-1">
+                                                {{ form.logo }}
+                                                {% if form.logo.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.logo.errors %}
+                                                    {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    {% trans "Recommended size: 200x200px. Max size: 2MB." %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Website -->
+                                    <div class="mb-3">
+                                        <label for="{{ form.website.id_for_label }}" class="form-label">
+                                            {% trans "Website" %}
+                                        </label>
+                                        {{ form.website }}
+                                        {% if form.website.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.website.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Location & Language -->
+                                <div class="mb-4">
+                                    <h6 class="mb-3">{% trans "Location & Language" %}</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.industry.id_for_label }}" class="form-label">
+                                                {% trans "Industry" %}
+                                            </label>
+                                            {{ form.industry }}
+                                            {% if form.industry.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.industry.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.country.id_for_label }}" class="form-label">
+                                                {% trans "Country" %}
+                                            </label>
+                                            {{ form.country }}
+                                            {% if form.country.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.country.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.language_code.id_for_label }}" class="form-label">
+                                                {% trans "Primary Language" %}
+                                            </label>
+                                            {{ form.language_code }}
+                                            {% if form.language_code.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.language_code.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ form.timezone.id_for_label }}" class="form-label">
+                                                {% trans "Timezone" %}
+                                            </label>
+                                            {{ form.timezone }}
+                                            {% if form.timezone.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.timezone.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between pt-3 border-top">
+                                    <a href="{% url 'accounts:org-detail' organization.pk %}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        {% trans "Back to Organization" %}
+                                    </a>
+                                    <div class="d-flex gap-2">
+                                        <button type="reset" class="btn btn-outline-secondary">
+                                            <i class="fas fa-undo me-2"></i>
+                                            {% trans "Reset" %}
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>
+                                            {% trans "Save Changes" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Organization Info Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {% trans "Organization Info" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">{% trans "Created" %}</span>
+                                <span class="fw-medium">{{ created_date }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">{% trans "Slug" %}</span>
+                                <code class="text-sm bg-light px-2 py-1 rounded">{{ organization.slug }}</code>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">{% trans "Total Members" %}</span>
+                                <span class="fw-medium">{{ total_members }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "Active Members" %}</span>
+                                <span class="fw-medium">{{ active_members_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Links Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-link me-2"></i>
+                                {% trans "Quick Links" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'accounts:org-member-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-users me-3 text-muted"></i>
+                                    <span>{% trans "Manage Members" %}</span>
+                                </a>
+                                <a href="{% url 'feedback:feedback-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-comments me-3 text-muted"></i>
+                                    <span>{% trans "View Feedback" %}</span>
+                                </a>
+                                <a href="{% url 'accounts:customer-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-user-friends me-3 text-muted"></i>
+                                    <span>{% trans "Manage Customers" %}</span>
+                                </a>
+                                <a href="{% url 'accounts:product-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-user-friends me-3 text-muted"></i>
+                                    <span>{% trans "Manage Products" %}</span>
+                                </a>
+                                <a href="{% url 'feedback:channel-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-user-friends me-3 text-muted"></i>
+                                    <span>{% trans "Manage Channels" %}</span>
+                                </a>
+                                 <a href="{% url 'feedback:tag-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-user-friends me-3 text-muted"></i>
+                                    <span>{% trans "Manage Tags" %}</span>
+                                </a>
+                                 <a href="{% url 'surveys:survey-list' organization.pk %}" 
+                                   class="list-group-item list-group-item-action d-flex align-items-center">
+                                    <i class="fas fa-user-friends me-3 text-muted"></i>
+                                    <span>{% trans "View Surveys" %}</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CX Features Settings Tab -->
+        <div class="tab-pane fade" id="features" role="tabpanel" tabindex="0">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-star me-2"></i>{% trans "Customer Experience Features" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <!-- Subscription & Features -->
+                                <div class="mb-4">
+                                    <h6 class="mb-3">{% trans "Subscription & Features" %}</h6>
+                                    
+                                    <!-- Subscription Tier -->
+                                    <div class="mb-3">
+                                        <label class="form-label">{% trans "Subscription Tier" %}</label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if subscription_tier_display %}
+                                            <span class="badge 
+                                                {% if organization.subscription_tier == 'enterprise' %}bg-purple
+                                                {% elif organization.subscription_tier == 'professional' %}bg-primary
+                                                {% elif organization.subscription_tier == 'basic' %}bg-success
+                                                {% else %}bg-secondary{% endif %} fs-6">
+                                                {{ subscription_tier_display }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-muted mt-2 mb-0">
+                                            {% if organization.subscription_tier == 'free' %}
+                                                {% trans "Free plan includes basic feedback collection." %}
+                                            {% elif organization.subscription_tier == 'basic' %}
+                                                {% trans "Basic plan includes enhanced analytics." %}
+                                            {% elif organization.subscription_tier == 'professional' %}
+                                                {% trans "Professional plan includes advanced features." %}
+                                            {% else %}
+                                                {% trans "Enterprise plan includes all features and priority support." %}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- AI Analysis Toggle -->
+                                    <div class="mb-4">
+                                        <div class="form-check form-switch">
+                                            {{ form.ai_analysis_enabled }}
+                                            <label class="form-check-label" for="{{ form.ai_analysis_enabled.id_for_label }}">
+                                                {% trans "AI Analysis" %}
+                                            </label>
+                                        </div>
+                                        <div class="form-text">
+                                            {% trans "Enable AI-powered sentiment analysis and insights" %}
+                                        </div>
+                                        {% if form.ai_analysis_enabled.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.ai_analysis_enabled.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Monthly Feedback Limit -->
+                                    <div class="mb-3">
+                                        <label for="{{ form.monthly_feedback_limit.id_for_label }}" class="form-label">
+                                            {% trans "Monthly Feedback Limit" %}
+                                        </label>
+                                        <div class="input-group">
+                                            {{ form.monthly_feedback_limit }}
+                                            <span class="input-group-text">{% trans "feedback/month" %}</span>
+                                        </div>
+                                        {% if form.monthly_feedback_limit.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.monthly_feedback_limit.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            {% trans "Maximum number of feedback entries allowed per month" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- JSON Settings -->
+                                <div class="mb-4">
+                                    <h6 class="mb-3">{% trans "Advanced Settings" %}</h6>
+                                    <label for="{{ form.settings.id_for_label }}" class="form-label">
+                                        {% trans "JSON Settings" %}
+                                    </label>
+                                    {{ form.settings }}
+                                    {% if form.settings.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.settings.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% trans "Custom configuration in JSON format" %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-end pt-3 border-top">
+                                    <div class="d-flex gap-2">
+                                        <button type="reset" class="btn btn-outline-secondary">
+                                            <i class="fas fa-undo me-2"></i>
+                                            {% trans "Reset" %}
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>
+                                            {% trans "Save Changes" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Feature Status Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-cogs me-2"></i>
+                                {% trans "Feature Status" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{% trans "AI Analysis" %}</span>
+                                    <span class="badge {% if organization.ai_analysis_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if organization.ai_analysis_enabled %}{% trans "Enabled" %}{% else %}{% trans "Disabled" %}{% endif %}
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{% trans "Feedback Collection" %}</span>
+                                    <span class="badge bg-success">{% trans "Active" %}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{% trans "Analytics Dashboard" %}</span>
+                                    <span class="badge bg-success">{% trans "Active" %}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{% trans "Customer Portal" %}</span>
+                                    <span class="badge bg-success">{% trans "Active" %}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                {% trans "Usage Statistics" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <small class="text-muted">{% trans "Monthly Feedback Limit" %}</small>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ feedback_usage_percentage }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {{ feedback_count }} / {{ organization.monthly_feedback_limit|default:"Unlimited" }} {% trans "used" %}
+                                </small>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">{% trans "Active Customers" %}</span>
+                                <span class="fw-medium">{{ customer_count }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{% trans "Feedback Collected" %}</span>
+                                <span class="fw-medium">{{ feedback_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analytics Tab -->
+        <div class="tab-pane fade" id="analytics" role="tabpanel" tabindex="0">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>{% trans "Analytics & Reports" %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-4">
+                                    <div class="card bg-primary bg-opacity-10 border-primary">
+                                        <div class="card-body text-center">
+                                            <h2 class="display-6">{{ feedback_count }}</h2>
+                                            <p class="text-muted mb-0">{% trans "Total Feedback" %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-4">
+                                    <div class="card bg-success bg-opacity-10 border-success">
+                                        <div class="card-body text-center">
+                                            <h2 class="display-6">{{ customer_count }}</h2>
+                                            <p class="text-muted mb-0">{% trans "Active Customers" %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-4">
+                                    <div class="card bg-info bg-opacity-10 border-info">
+                                        <div class="card-body text-center">
+                                            <h2 class="display-6">{{ positive_sentiment_percentage }}%</h2>
+                                            <p class="text-muted mb-0">{% trans "Positive Sentiment" %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-4">
+                                    <div class="card bg-warning bg-opacity-10 border-warning">
+                                        <div class="card-body text-center">
+                                            <h2 class="display-6">{{ total_members }}</h2>
+                                            <p class="text-muted mb-0">{% trans "Team Members" %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="alert-heading">{% trans "Analytics Features" %}</h6>
+                                        <p class="mb-0">
+                                            {% trans "Advanced analytics and reporting features are available in higher subscription tiers. Upgrade to access detailed insights, custom reports, and predictive analytics." %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">{% trans "Recent Activity" %}</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="list-group list-group-flush">
+                                                {% if recent_activities %}
+                                                    {% for activity in recent_activities %}
+                                                    <div class="list-group-item">
+                                                        <div class="d-flex w-100 justify-content-between">
+                                                            <small class="text-muted">{{ activity.timestamp }}</small>
+                                                        </div>
+                                                        <p class="mb-1">{{ activity.description }}</p>
+                                                    </div>
+                                                    {% endfor %}
+                                                {% else %}
+                                                <div class="text-center py-4">
+                                                    <i class="fas fa-chart-line text-muted fa-2x mb-3"></i>
+                                                    <p class="text-muted">{% trans "No recent activity recorded" %}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">{% trans "Export Reports" %}</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-outline-primary">
+                                                    <i class="fas fa-download me-2"></i>
+                                                    {% trans "Export Feedback Data" %}
+                                                </button>
+                                                <button class="btn btn-outline-primary">
+                                                    <i class="fas fa-file-csv me-2"></i>
+                                                    {% trans "Export Customer List" %}
+                                                </button>
+                                                <button class="btn btn-outline-primary">
+                                                    <i class="fas fa-chart-pie me-2"></i>
+                                                    {% trans "Generate Analytics Report" %}
+                                                </button>
+                                            </div>
+                                            <div class="mt-3">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    {% trans "Exports are available in CSV, PDF, and Excel formats." %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danger Zone Card (Always visible) -->
+<div class="container-fluid px-4 mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger bg-opacity-10 border-danger">
+            <h5 class="card-title text-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {% trans "Danger Zone" %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                {% trans "These actions are irreversible. Please proceed with caution." %}
+            </p>
+            
+            <!-- Check if user has permission for dangerous actions -->
+            {% if can_perform_dangerous_actions %}
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <button type="button" 
+                            class="btn btn-outline-warning w-100"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#transferModal">
+                        <i class="fas fa-user-shield me-2"></i>
+                        {% trans "Transfer Ownership" %}
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" 
+                            class="btn btn-outline-danger w-100"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteModal">
+                        <i class="fas fa-trash-alt me-2"></i>
+                        {% trans "Delete Organization" %}
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted fst-italic mb-0">
+                <i class="fas fa-lock me-1"></i>
+                {% trans "Only organization owners can perform these actions." %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Transfer Ownership Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-shield me-2"></i>
+                    {% trans "Transfer Ownership" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Are you sure you want to transfer ownership of this organization? This action cannot be undone." %}</p>
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <p class="mb-1">{% trans "You will become an administrator after transferring ownership." %}</p>
+                            <p class="mb-0">{% trans "The new owner will have full control over the organization." %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancel" %}
+                </button>
+                <a href="{% url 'accounts:org-transfer-ownership' organization.pk %}" 
+                   class="btn btn-warning">
+                    {% trans "Transfer Ownership" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Organization Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger bg-opacity-10">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Delete Organization" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "This action cannot be undone. This will permanently delete the organization and all associated data including:" %}</p>
+                <ul class="mb-3">
+                    <li>{% trans "All organization members" %}</li>
+                    <li>{% trans "All customer data" %}</li>
+                    <li>{% trans "All feedback and analytics" %}</li>
+                    <li>{% trans "All settings and configurations" %}</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <p class="mb-2">{% trans "Please type the organization name below to confirm deletion:" %}</p>
+                            <input type="text" 
+                                   id="confirmOrganizationName" 
+                                   placeholder="{{ organization.name }}"
+                                   class="form-control"
+                                   oninput="validateDeletion()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancel" %}
+                </button>
+                <form method="post" action="{% url 'accounts:org-delete' organization.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            id="deleteOrgBtn"
+                            disabled
+                            class="btn btn-danger opacity-50">
+                        {% trans "Delete Organization" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Organization deletion validation
+    function validateDeletion() {
+        const orgName = "{{ organization.name }}";
+        const input = document.getElementById('confirmOrganizationName');
+        const deleteBtn = document.getElementById('deleteOrgBtn');
+        
+        if (input.value === orgName) {
+            deleteBtn.disabled = false;
+            deleteBtn.classList.remove('opacity-50');
+        } else {
+            deleteBtn.disabled = true;
+            deleteBtn.classList.add('opacity-50');
+        }
+    }
+    
+    // Auto-resize JSON textarea
+    const jsonTextarea = document.getElementById('{{ form.settings.id_for_label }}');
+    if (jsonTextarea) {
+        jsonTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Set initial height
+        setTimeout(() => {
+            jsonTextarea.style.height = 'auto';
+            jsonTextarea.style.height = (jsonTextarea.scrollHeight) + 'px';
+        }, 100);
+    }
+    
+    // Form validation
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const nameField = document.getElementById('{{ form.name.id_for_label }}');
+            if (nameField && !nameField.value.trim()) {
+                e.preventDefault();
+                alert('{% trans "Organization name is required" %}');
+                nameField.focus();
+            }
+        });
+    });
+    
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

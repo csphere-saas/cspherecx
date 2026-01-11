@@ -1,0 +1,199 @@
+<!-- customers/customer_list.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ page_title }}</h1>
+            <p class="text-muted mb-0">
+                {% blocktrans count counter=total_customers %}
+                {{ total_customers }} customer
+                {% plural %}
+                {{ total_customers }} customers
+                {% endblocktrans %}
+            </p>
+        </div>
+        <a href="{% url 'accounts:customer-create' organization.pk %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>
+            {% trans "Add Customer" %}
+        </a>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ filter_form.search.id_for_label }}" class="form-label">
+                        {% trans "Search" %}
+                    </label>
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ filter_form.segment.id_for_label }}" class="form-label">
+                        {% trans "Segment" %}
+                    </label>
+                    {{ filter_form.segment }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label">
+                        {% trans "Sort By" %}
+                    </label>
+                    {{ filter_form.sort_by }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel me-2"></i>{% trans "Filter" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            {% if customers %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">{% trans "Customer" %}</th>
+                            <th>{% trans "ID" %}</th>
+                            <th>{% trans "Segment" %}</th>
+                            <th>{% trans "Lifetime Value" %}</th>
+                            <th>{% trans "Interactions" %}</th>
+                            <th>{% trans "Last Active" %}</th>
+                            <th class="text-end pe-4">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3">
+                                        <span class="text-white small fw-bold">
+                                            {{ customer.first_name|first|upper }}{{ customer.last_name|first|upper }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ customer.get_full_name }}</div>
+                                        <small class="text-muted">{{ customer.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <code class="small">{{ customer.customer_id }}</code>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if customer.segment == 'vip' %}bg-primary
+                                    {% elif customer.segment == 'loyal' %}bg-success
+                                    {% elif customer.segment == 'regular' %}bg-info
+                                    {% elif customer.segment == 'new' %}bg-secondary
+                                    {% elif customer.segment == 'at_risk' %}bg-warning
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ customer.get_segment_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold">${{ customer.lifetime_value }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ customer.total_interactions }}</span>
+                            </td>
+                            <td>
+                                {% if customer.last_interaction_date %}
+                                <small class="text-muted">{{ customer.last_interaction_date|date:"M j, Y" }}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'accounts:customer-detail' organization.pk customer.pk %}" 
+                                       class="btn btn-outline-primary" 
+                                       title="{% trans 'View Details' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'accounts:customer-update' organization.pk customer.pk %}" 
+                                       class="btn btn-outline-secondary"
+                                       title="{% trans 'Edit' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'accounts:customer-delete' organization.pk customer.pk %}" 
+                                       class="btn btn-outline-danger"
+                                       title="{% trans 'Delete' %}">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <h5 class="text-muted mt-3">{% trans "No customers found" %}</h5>
+                <p class="text-muted mb-4">{% trans "Get started by adding your first customer." %}</p>
+                <a href="{% url 'accounts:customer-create' organization.pk %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    {% trans "Add Customer" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Customer pagination">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Previous" %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Next" %}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+</section>
+{% endblock %}

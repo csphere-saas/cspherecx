@@ -1,0 +1,307 @@
+<!-- templates/organizations/organization-member-invite.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Invite Team Member" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+
+<section class="py-5"><p></p><br>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-list' %}">{% trans "Organizations" %}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{{ organization.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "Invite Member" %}</li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-2">{% trans "Invite Team Member" %}</h1>
+                    <p class="text-muted mb-0">
+                        {% trans "Invite a new user to join" %} <strong>{{ organization.name }}</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Invite Card -->
+            <div class="card">
+                <div class="card-body">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Invitation Form -->
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Email Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.user_email.id_for_label }}" class="form-label">
+                                {% trans "Email Address" %} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.user_email }}
+                            {% if form.user_email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.user_email.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                {% trans "Enter the email address of the person you want to invite." %}
+                            </div>
+                        </div>
+
+                        <!-- Role Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">
+                                {% trans "Role" %} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.role.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Role Descriptions -->
+                            <div class="mt-3">
+                                <h6 class="mb-2">{% trans "Role Permissions" %}:</h6>
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item border-0 px-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-primary">{% trans "Owner" %}</span>
+                                            </div>
+                                            <small class="text-muted">{% trans "Full organization control" %}</small>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-info">{% trans "Admin" %}</span>
+                                            </div>
+                                            <small class="text-muted">{% trans "Manage organization & users" %}</small>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-success">{% trans "Manager" %}</span>
+                                            </div>
+                                            <small class="text-muted">{% trans "Manage users & feedback" %}</small>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-warning">{% trans "Analyst" %}</span>
+                                            </div>
+                                            <small class="text-muted">{% trans "View & analyze feedback" %}</small>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-secondary">{% trans "Viewer" %}</span>
+                                            </div>
+                                            <small class="text-muted">{% trans "Read-only access" %}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Members Info -->
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-info-circle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading mb-2">{% trans "About Invitations" %}</h6>
+                                    <p class="mb-2">{% trans "Existing users will be added immediately. New users will receive an invitation email to create an account and join." %}</p>
+                                    <p class="mb-0"><strong>{% trans "Current members" %}:</strong> {{ organization.members.count }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'accounts:org-member-list' pk=organization.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                {% trans "Back to Members" %}
+                            </a>
+                            <div>
+                                <button type="reset" class="btn btn-outline-danger me-2">
+                                    <i class="fas fa-redo me-2"></i>
+                                    {% trans "Reset" %}
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i>
+                                    {% trans "Send Invitation" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        {% trans "Need Help?" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h6>{% trans "Who can I invite?" %}</h6>
+                            <p class="text-muted small">
+                                {% trans "You can invite anyone with a valid email address. They don't need to have an existing account." %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>{% trans "What happens after invitation?" %}</h6>
+                            <p class="text-muted small">
+                                {% trans "Invited users will receive an email with instructions. They can accept or decline the invitation." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .list-group-item {
+        background: transparent;
+    }
+    
+    .form-control:focus {
+        border-color: #4d94ff;
+        box-shadow: 0 0 0 0.2rem rgba(77, 148, 255, 0.25);
+    }
+    
+    .badge {
+        font-size: 0.75em;
+        padding: 0.35em 0.65em;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add form validation styling
+        const emailInput = document.getElementById('{{ form.user_email.id_for_label }}');
+        const roleSelect = document.getElementById('{{ form.role.id_for_label }}');
+        
+        if (emailInput && roleSelect) {
+            // Check for validation errors on page load
+            if (emailInput.classList.contains('is-invalid')) {
+                emailInput.focus();
+            }
+            
+            // Real-time validation for email
+            emailInput.addEventListener('blur', function() {
+                const email = this.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                
+                if (email && !emailRegex.test(email)) {
+                    this.classList.add('is-invalid');
+                    this.nextElementSibling?.classList?.add('d-block');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.nextElementSibling?.classList?.remove('d-block');
+                }
+            });
+            
+            // Prevent form submission on Enter key in email field
+            emailInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.querySelector('button[type="submit"]').click();
+                }
+            });
+        }
+        
+        // Show role description on hover
+        const roleOptions = document.querySelectorAll('#{{ form.role.id_for_label }} option');
+        const roleDescriptions = {
+            'owner': '{% trans "Full control over organization settings, billing, and members." %}',
+            'admin': '{% trans "Can manage organization settings and members, but cannot delete the organization." %}',
+            'manager': '{% trans "Can manage feedback, users (except owners/admins), and view analytics." %}',
+            'analyst': '{% trans "Can view feedback, analytics, and reports. Cannot modify settings or users." %}',
+            'viewer': '{% trans "Read-only access to organization data. Cannot make any changes." %}'
+        };
+        
+        // Create tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'role-tooltip alert alert-light border shadow-sm position-absolute';
+        tooltip.style.display = 'none';
+        tooltip.style.zIndex = '1000';
+        document.body.appendChild(tooltip);
+        
+        // Show tooltip on mouseover
+        roleSelect.addEventListener('mouseover', function(e) {
+            const value = this.value;
+            if (value && roleDescriptions[value]) {
+                tooltip.innerHTML = `<strong>${this.options[this.selectedIndex].text}</strong>: ${roleDescriptions[value]}`;
+                tooltip.style.display = 'block';
+                
+                const rect = this.getBoundingClientRect();
+                tooltip.style.top = (rect.top + window.scrollY - tooltip.offsetHeight - 10) + 'px';
+                tooltip.style.left = rect.left + 'px';
+            }
+        });
+        
+        roleSelect.addEventListener('mouseout', function() {
+            tooltip.style.display = 'none';
+        });
+        
+        roleSelect.addEventListener('change', function() {
+            tooltip.style.display = 'none';
+        });
+    });
+</script>
+{% endblock %}

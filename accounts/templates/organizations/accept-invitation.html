@@ -1,0 +1,103 @@
+<!-- templates/organizations/accept_invitation.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Accept Invitation" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope-open-text me-2"></i>
+                        {% trans "Organization Invitation" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="fas fa-users fa-3x text-primary"></i>
+                        </div>
+                        <h3>{% trans "You're Invited!" %}</h3>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-lg"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1">
+                                    <strong>{{ invitation.invited_by.get_full_name|default:invitation.invited_by.email }}</strong>
+                                    {% trans "has invited you to join" %}
+                                </p>
+                                <h5 class="mb-0 text-primary">{{ organization.name }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3">{% trans "Invitation Details" %}</h5>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="row">
+                                    <div class="col-6">{% trans "Your Email" %}</div>
+                                    <div class="col-6 text-end fw-bold">{{ invitation.email }}</div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="row">
+                                    <div class="col-6">{% trans "Assigned Role" %}</div>
+                                    <div class="col-6 text-end">
+                                        <span class="badge bg-primary">{{ invitation.get_role_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="row">
+                                    <div class="col-6">{% trans "Invitation Expires" %}</div>
+                                    <div class="col-6 text-end">{{ invitation.expires_at|date:"F d, Y" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if request.user.email.lower == invitation.email.lower %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    {% trans "Accept Invitation & Join Organization" %}
+                                </button>
+                                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                                    {% trans "Decline" %}
+                                </a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-0">
+                                        {% trans "This invitation is for" %} <strong>{{ invitation.email }}</strong>.
+                                        {% trans "You are logged in as" %} <strong>{{ request.user.email }}</strong>.
+                                    </p>
+                                    <p class="mb-0 mt-2">
+                                        {% trans "Please log out and log in with the correct email address to accept this invitation." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

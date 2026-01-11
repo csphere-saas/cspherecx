@@ -1,0 +1,566 @@
+<!-- templates/organizations/organization-transfer-ownership.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Transfer Ownership" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5"><p></p><br>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-list' %}">{% trans "Organizations" %}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-settings' organization.pk %}">{{ organization.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "Transfer Ownership" %}</li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 p-4 mb-3">
+                        <i class="fas fa-crown fa-2x text-warning"></i>
+                    </div>
+                </div>
+                <h1 class="h3 mb-2">{% trans "Transfer Organization Ownership" %}</h1>
+                <p class="text-muted mb-0">
+                    {% trans "You are about to transfer ownership of" %} <strong class="text-primary">{{ organization.name }}</strong>
+                </p>
+            </div>
+
+            <!-- Danger Warning Card -->
+            <div class="card border-danger mb-4">
+                <div class="card-header bg-danger bg-opacity-10 border-danger">
+                    <h5 class="mb-0 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Important: This Action Cannot Be Undone" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-exclamation-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading mb-2">{% trans "What will happen?" %}</h6>
+                                <ul class="mb-0 ps-3">
+                                    <li>{% trans "You will lose owner privileges and become an administrator" %}</li>
+                                    <li>{% trans "The new owner will have full control over the organization" %}</li>
+                                    <li>{% trans "You will no longer be able to delete the organization" %}</li>
+                                    <li>{% trans "The new owner will be shown as the organization creator" %}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Organization Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building me-2"></i>
+                        {% trans "Organization Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small text-muted mb-1">{% trans "Organization Name" %}</label>
+                            <p class="mb-0 fw-medium">{{ organization.name }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small text-muted mb-1">{% trans "Created On" %}</label>
+                            <p class="mb-0 fw-medium">{{ organization.created_at|date:"F d, Y" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small text-muted mb-1">{% trans "Total Members" %}</label>
+                            <p class="mb-0 fw-medium">{{ organization.members.count }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small text-muted mb-1">{% trans "Current Owner" %}</label>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm rounded-circle bg-light d-flex align-items-center justify-content-center me-2 border">
+                                    <span class="fw-bold text-primary">
+                                        {{ request.user.first_name|first|default:request.user.email|first|upper }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="mb-0 fw-medium">
+                                        {{ request.user.get_full_name|default:request.user.email }}
+                                    </p>
+                                    <small class="text-muted">{% trans "That's you!" %}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfer Form Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        {% trans "Select New Owner" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate id="transferForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- New Owner Selection -->
+                        <div class="mb-4">
+                            <label for="{{ form.new_owner.id_for_label }}" class="form-label fw-medium">
+                                {% trans "Select New Owner" %} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.new_owner }}
+                            {% if form.new_owner.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.new_owner.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                {% trans "Choose a trusted member to become the new organization owner." %}
+                            </div>
+                        </div>
+
+                        <!-- Confirmation -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmTransfer" required>
+                                <label class="form-check-label fw-medium" for="confirmTransfer">
+                                    {% trans "I understand that I will lose owner privileges and the selected member will become the new owner of" %} 
+                                    <strong>{{ organization.name }}</strong>.
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Additional Confirmation -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmIrreversible" required>
+                                <label class="form-check-label fw-medium" for="confirmIrreversible">
+                                    {% trans "I understand that this action is irreversible and I cannot undo it." %}
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Verification (Optional) -->
+                        <div class="mb-4">
+                            <label for="verificationText" class="form-label">
+                                {% trans "Type 'TRANSFER OWNERSHIP' to confirm" %}
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="verificationText" 
+                                placeholder="{% trans 'Type the phrase exactly as shown' %}"
+                                data-expected="TRANSFER OWNERSHIP"
+                            >
+                            <div class="form-text">
+                                {% trans "This extra step helps prevent accidental transfers." %}
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                            <a href="{% url 'accounts:org-settings' organization.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-warning" id="transferBtn" disabled>
+                                <i class="fas fa-crown me-2"></i>
+                                {% trans "Transfer Ownership" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Available Members Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        {% trans "Available Members" %} 
+                        <span class="badge bg-secondary ms-2">{{ organization.members.count|add:"-1" }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for member in organization.members.filter.is_active %}
+                            {% if member.user != request.user %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="avatar-sm rounded-circle bg-light d-flex align-items-center justify-content-center border">
+                                            <span class="fw-bold text-primary">
+                                                {{ member.user.first_name|first|default:member.user.email|first|upper }}{{ member.user.last_name|first|default:'' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    {{ member.user.get_full_name|default:member.user.email }}
+                                                    {% if member.user == request.user %}
+                                                    <span class="badge bg-info ms-2">{% trans "You" %}</span>
+                                                    {% endif %}
+                                                </h6>
+                                                <p class="mb-0 text-muted small">{{ member.user.email }}</p>
+                                            </div>
+                                            <div>
+                                                <span class="badge {% if member.role == 'owner' %}bg-warning{% elif member.role == 'admin' %}bg-info{% elif member.role == 'manager' %}bg-success{% elif member.role == 'analyst' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                    {{ member.get_role_display }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% empty %}
+                        <div class="list-group-item text-center py-5">
+                            <i class="fas fa-user-slash fa-2x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">{% trans "No other members available for transfer." %}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        {% trans "Frequently Asked Questions" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                    {% trans "What happens after transfer?" %}
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p class="mb-2">{% trans "After transferring ownership:" %}</p>
+                                    <ul class="mb-0">
+                                        <li>{% trans "You will become an administrator (not owner)" %}</li>
+                                        <li>{% trans "The new owner will have full control" %}</li>
+                                        <li>{% trans "You can still access all features except owner-only actions" %}</li>
+                                        <li>{% trans "The new owner can transfer ownership again if needed" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    {% trans "Can I get ownership back?" %}
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p>{% trans "No, ownership transfer is irreversible. Once you transfer ownership, only the new owner can transfer it back to you or to someone else." %}</p>
+                                    <p class="mb-0">{% trans "Make sure you trust the person you're transferring ownership to." %}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    {% trans "What if I make a mistake?" %}
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p>{% trans "If you accidentally transfer ownership to the wrong person:" %}</p>
+                                    <ul class="mb-0">
+                                        <li>{% trans "Contact the new owner immediately" %}</li>
+                                        <li>{% trans "Ask them to transfer ownership back to you" %}</li>
+                                        <li>{% trans "If they refuse, contact our support team" %}</li>
+                                        <li>{% trans "Provide proof of your original ownership" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-sm {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .avatar-sm span {
+        font-size: 0.875rem;
+    }
+    
+    .bg-opacity-10 {
+        opacity: 0.1;
+    }
+    
+    .card {
+        border-radius: 10px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .list-group-item {
+        padding: 1rem;
+        border-color: rgba(0,0,0,0.08);
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: 0;
+    }
+    
+    .form-check-input:checked {
+        background-color: #fd7e14;
+        border-color: #fd7e14;
+    }
+    
+    .form-check-input:focus {
+        border-color: #fd7e14;
+        box-shadow: 0 0 0 0.25rem rgba(253, 126, 20, 0.25);
+    }
+    
+    .btn-warning {
+        background-color: #fd7e14;
+        border-color: #fd7e14;
+        color: white;
+    }
+    
+    .btn-warning:hover {
+        background-color: #e56b00;
+        border-color: #d96500;
+        color: white;
+    }
+    
+    .btn-warning:disabled {
+        background-color: #fd7e14;
+        border-color: #fd7e14;
+        opacity: 0.65;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+        padding: 0.35em 0.65em;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(253, 126, 20, 0.1);
+        color: #fd7e14;
+    }
+    
+    .accordion-button:focus {
+        border-color: #fd7e14;
+        box-shadow: 0 0 0 0.25rem rgba(253, 126, 20, 0.25);
+    }
+    
+    @media (max-width: 768px) {
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .avatar-sm span {
+            font-size: 0.75rem;
+        }
+        
+        .list-group-item .row {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .list-group-item .col-auto {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('transferForm');
+        const transferBtn = document.getElementById('transferBtn');
+        const confirmTransfer = document.getElementById('confirmTransfer');
+        const confirmIrreversible = document.getElementById('confirmIrreversible');
+        const verificationText = document.getElementById('verificationText');
+        const expectedPhrase = verificationText ? verificationText.dataset.expected : 'TRANSFER OWNERSHIP';
+        const newOwnerSelect = document.getElementById('{{ form.new_owner.id_for_label }}');
+        
+        // Function to update transfer button state
+        function updateTransferButton() {
+            const isConfirmed = confirmTransfer && confirmTransfer.checked;
+            const isIrreversible = confirmIrreversible && confirmIrreversible.checked;
+            const isVerified = verificationText && verificationText.value.trim().toUpperCase() === expectedPhrase;
+            const hasSelectedOwner = newOwnerSelect && newOwnerSelect.value !== '';
+            
+            if (transferBtn) {
+                transferBtn.disabled = !(isConfirmed && isIrreversible && isVerified && hasSelectedOwner);
+            }
+        }
+        
+        // Add event listeners for confirmation checkboxes
+        if (confirmTransfer) {
+            confirmTransfer.addEventListener('change', updateTransferButton);
+        }
+        
+        if (confirmIrreversible) {
+            confirmIrreversible.addEventListener('change', updateTransferButton);
+        }
+        
+        // Add event listener for verification text input
+        if (verificationText) {
+            verificationText.addEventListener('input', function() {
+                const input = this.value.trim().toUpperCase();
+                if (input === expectedPhrase) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else if (input.length > 0 && input !== expectedPhrase) {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-valid', 'is-invalid');
+                }
+                updateTransferButton();
+            });
+        }
+        
+        // Add event listener for owner selection
+        if (newOwnerSelect) {
+            newOwnerSelect.addEventListener('change', updateTransferButton);
+            
+            // Highlight selected member in the list
+            newOwnerSelect.addEventListener('change', function() {
+                const selectedId = this.value;
+                document.querySelectorAll('.list-group-item').forEach(item => {
+                    const memberId = item.dataset.memberId;
+                    if (memberId === selectedId) {
+                        item.classList.add('bg-warning', 'bg-opacity-10');
+                    } else {
+                        item.classList.remove('bg-warning', 'bg-opacity-10');
+                    }
+                });
+            });
+        }
+        
+        // Add member IDs to list items
+        document.querySelectorAll('.list-group-item').forEach(item => {
+            const memberInfo = item.querySelector('h6').textContent.trim();
+            // Extract email from member info (you might need to adjust this based on your HTML structure)
+            const emailMatch = memberInfo.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            if (emailMatch) {
+                item.dataset.email = emailMatch[0];
+            }
+        });
+        
+        // Add confirmation dialog on submit
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!confirmTransfer.checked || !confirmIrreversible.checked) {
+                    e.preventDefault();
+                    alert('{% trans "Please confirm all checkboxes before transferring ownership." %}');
+                    return false;
+                }
+                
+                const selectedOption = newOwnerSelect.options[newOwnerSelect.selectedIndex];
+                const newOwnerName = selectedOption.text;
+                const organizationName = "{{ organization.name }}";
+                
+                // Show final confirmation
+                const confirmationMessage = `{% trans "Are you absolutely sure you want to transfer ownership of" %} "${organizationName}" {% trans "to" %} ${newOwnerName}?\n\n{% trans "This action cannot be undone." %}`;
+                
+                if (!confirm(confirmationMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Show loading state
+                transferBtn.disabled = true;
+                transferBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> {% trans "Transferring..." %}';
+            });
+        }
+        
+        // Initialize button state
+        updateTransferButton();
+        
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', function(e) {
+            if (confirmTransfer && confirmTransfer.checked && form && !form.submitted) {
+                const confirmationMessage = '{% trans "You have not completed the ownership transfer. Are you sure you want to leave?" %}';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+        
+        // Remove beforeunload when form is submitted
+        form.addEventListener('submit', function() {
+            this.submitted = true;
+            window.removeEventListener('beforeunload');
+        });
+        
+        // Mobile menu toggle for better UX
+        if (window.innerWidth < 768) {
+            // Add responsive behavior for small screens
+            const faqAccordion = document.getElementById('faqAccordion');
+            if (faqAccordion) {
+                // Collapse all accordion items by default on mobile
+                const collapses = faqAccordion.querySelectorAll('.accordion-collapse');
+                collapses.forEach(collapse => {
+                    if (!collapse.classList.contains('show')) {
+                        collapse.classList.add('collapse');
+                    }
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}

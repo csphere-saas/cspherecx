@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block page_title %}
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+                <i class="fas fa-user-plus text-primary fs-4"></i>
+            </div>
+            <div>
+                <h1 class="h2 mb-1">{{ page_title }}</h1>
+                <p class="text-muted mb-0">{{ organization.name }}</p>
+            </div>
+        </div>
+        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>{% trans "Back to Customers" %}
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="py-5"><p></p><br>
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        {% trans "Customer Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Messages -->
+                        {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas 
+                                        {% if message.tags == 'success' %}fa-check-circle
+                                        {% elif message.tags == 'error' %}fa-exclamation-circle
+                                        {% elif message.tags == 'warning' %}fa-exclamation-triangle
+                                        {% else %}fa-info-circle{% endif %}
+                                        me-3"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Form Errors -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle me-3"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="alert-heading">{% trans "Form Errors" %}</h6>
+                                    <ul class="mb-0">
+                                        {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <!-- Customer ID Field -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.customer_id.id_for_label }}" class="form-label">
+                                    {% trans "Customer ID" %}
+                                    <span class="text-muted">{% trans "(optional)" %}</span>
+                                </label>
+                                {{ form.customer_id }}
+                                {% if form.customer_id.help_text %}
+                                <div class="form-text">{{ form.customer_id.help_text }}</div>
+                                {% endif %}
+                                {% if form.customer_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.customer_id.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Email Field -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    {% trans "Email" %} *
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.help_text %}
+                                <div class="form-text">{{ form.email.help_text }}</div>
+                                {% endif %}
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.email.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Name Fields -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    {% trans "First Name" %}
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.first_name.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    {% trans "Last Name" %}
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.last_name.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Contact Information -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                    {% trans "Phone Number" %}
+                                </label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.phone.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.customer_type.id_for_label }}" class="form-label">
+                                    {% trans "Customer Type" %}
+                                </label>
+                                {{ form.customer_type }}
+                                {% if form.customer_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.customer_type.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Location Information -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.country.id_for_label }}" class="form-label">
+                                    {% trans "Country" %}
+                                </label>
+                                {{ form.country }}
+                                {% if form.country.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.country.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.city.id_for_label }}" class="form-label">
+                                    {% trans "City" %}
+                                </label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.city.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Device and Segmentation -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.device_type.id_for_label }}" class="form-label">
+                                    {% trans "Device Type" %}
+                                </label>
+                                {{ form.device_type }}
+                                {% if form.device_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.device_type.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.segment.id_for_label }}" class="form-label">
+                                    {% trans "Customer Segment" %}
+                                </label>
+                                {{ form.segment }}
+                                {% if form.segment.help_text %}
+                                <div class="form-text">{{ form.segment.help_text }}</div>
+                                {% endif %}
+                                {% if form.segment.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.segment.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between pt-4 border-top">
+                            
+                            <div class="d-flex gap-2">
+                                <button type="reset" class="btn btn-outline-secondary">
+                                    <i class="fas fa-undo me-2"></i>
+                                    {% trans "Reset" %}
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    {{ submit_text }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Help Card -->
+                <div class="card-footer bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-2">
+                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                {% trans "Tips" %}
+                            </h6>
+                            <ul class="small text-muted mb-0">
+                                <li>{% trans "Customer ID will be auto-generated if left empty" %}</li>
+                                <li>{% trans "Email is required for customer identification" %}</li>
+                                <li>{% trans "Segment helps in customer analysis and targeting" %}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-2">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                {% trans "Note" %}
+                            </h6>
+                            <p class="small text-muted mb-0">
+                                {% trans "All customer data is stored securely and only accessible to authorized team members." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for better form appearance */
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .card {
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .invalid-feedback {
+        display: block;
+        font-size: 0.875rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-generate customer ID hint
+    document.addEventListener('DOMContentLoaded', function() {
+        const customerIdField = document.getElementById('{{ form.customer_id.id_for_label }}');
+        const emailField = document.getElementById('{{ form.email.id_for_label }}');
+        
+        if (customerIdField && emailField) {
+            // Show hint for auto-generation
+            if (!customerIdField.value) {
+                customerIdField.placeholder = "{% trans 'Will be auto-generated from email' %}";
+            }
+            
+            // Optional: Auto-fill customer ID when email is entered
+            emailField.addEventListener('blur', function() {
+                if (!customerIdField.value && emailField.value) {
+                    const emailPrefix = emailField.value.split('@')[0];
+                    customerIdField.placeholder = `cust_${emailPrefix}_******`;
+                }
+            });
+        }
+        
+        // Form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            // Validate required fields
+            const emailField = document.getElementById('{{ form.email.id_for_label }}');
+            if (!emailField.value.trim()) {
+                e.preventDefault();
+                alert('{% trans "Email is required" %}');
+                emailField.focus();
+                return false;
+            }
+        });
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

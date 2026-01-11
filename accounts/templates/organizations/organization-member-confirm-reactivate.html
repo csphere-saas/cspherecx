@@ -1,0 +1,632 @@
+<!-- templates/organizations/organization-member-confirm-reactivate.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Reactivate Member" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-list' %}">{% trans "Organizations" %}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{{ organization.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{% trans "Members" %}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "Reactivate Member" %}</li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 p-4 mb-3">
+                        <i class="fas fa-user-check fa-2x text-success"></i>
+                    </div>
+                </div>
+                <h1 class="h3 mb-2">{% trans "Reactivate Team Member" %}</h1>
+                <p class="text-muted mb-0">
+                    {% trans "You are about to restore a deactivated member's access to" %} 
+                    <strong class="text-primary">{{ organization.name }}</strong>
+                </p>
+            </div>
+
+            <!-- Information Card -->
+            <div class="card border-success mb-4">
+                <div class="card-header bg-success bg-opacity-10 border-success">
+                    <h5 class="mb-0 text-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "Member Reactivation" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading mb-2">{% trans "What will happen?" %}</h6>
+                                <p class="mb-2">{% trans "The member will regain access to the organization with their previous role and permissions." %}</p>
+                                <p class="mb-0">{% trans "Their historical data and contributions will remain intact." %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Member Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        {% trans "Member Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <!-- Member Avatar -->
+                        <div class="col-auto mb-3 mb-sm-0">
+                            <div class="avatar-lg rounded-circle bg-light d-flex align-items-center justify-content-center border border-success">
+                                {% if member.user.first_name %}
+                                <span class="fs-2 fw-bold text-success">
+                                    {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                                </span>
+                                {% else %}
+                                <span class="fs-2 fw-bold text-success">
+                                    {{ member.user.email|first|upper }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Member Details -->
+                        <div class="col">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Name" %}</label>
+                                        <p class="mb-0 fw-medium">
+                                            {% if member.user.first_name or member.user.last_name %}
+                                                {{ member.user.first_name }} {{ member.user.last_name }}
+                                            {% else %}
+                                                {% trans "Not specified" %}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Email" %}</label>
+                                        <p class="mb-0 fw-medium">{{ member.user.email }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Role" %}</label>
+                                        <div>
+                                            <span class="badge {% if member.role == 'owner' %}bg-primary{% elif member.role == 'admin' %}bg-info{% elif member.role == 'manager' %}bg-success{% elif member.role == 'analyst' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ member.get_role_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Joined" %}</label>
+                                        <p class="mb-0 fw-medium">{{ member.created_at|date:"M d, Y" }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Last Active" %}</label>
+                                        <p class="mb-0 fw-medium">
+                                            {% if member.updated_at %}
+                                                {{ member.updated_at|date:"M d, Y" }}
+                                            {% else %}
+                                                {% trans "Unknown" %}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Status" %}</label>
+                                        <div>
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>
+                                                {% trans "Inactive" %}
+                                            </span>
+                                            <small class="text-muted ms-2">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {% trans "Deactivated" %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reactivation Benefits -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        {% trans "Benefits of Reactivation" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-success">
+                                    <i class="fas fa-unlock fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Immediate Access Restored" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "Member will immediately regain access to all organization data and features." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-success">
+                                    <i class="fas fa-history fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Historical Data Preserved" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "All their previous contributions, feedback, and history will be available." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-success">
+                                    <i class="fas fa-users fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Team Collaboration" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "They can immediately resume collaboration with other team members." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-success">
+                                    <i class="fas fa-chart-line fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "No Setup Required" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "No configuration needed. Their settings and preferences are preserved." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate id="reactivateForm">
+                        {% csrf_token %}
+                        
+                        <!-- Messages -->
+                        {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Confirmation Checkbox -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmReactivate" required>
+                                <label class="form-check-label fw-medium" for="confirmReactivate">
+                                    {% trans "I want to restore access for" %} 
+                                    <strong>{{ member.user.get_full_name|default:member.user.email }}</strong> 
+                                    {% trans "to" %} <strong>{{ organization.name }}</strong>.
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Optional Welcome Message -->
+                        <div class="mb-4">
+                            <label for="welcomeMessage" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>
+                                {% trans "Send welcome back message (optional)" %}
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="welcomeMessage" 
+                                name="welcome_message" 
+                                rows="3" 
+                                placeholder="{% trans "Add a personal note to welcome them back to the team..." %}"
+                                maxlength="500"
+                            ></textarea>
+                            <div class="form-text">
+                                {% trans "This message will be included in the reactivation notification email." %}
+                            </div>
+                            <div class="form-text text-end mt-1">
+                                <span id="charCount">0</span>/500 {% trans "characters" %}
+                            </div>
+                        </div>
+
+                        <!-- Notification Options -->
+                        <div class="mb-4">
+                            <label class="form-label mb-2">
+                                <i class="fas fa-bell me-2"></i>
+                                {% trans "Notification Options" %}
+                            </label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="sendEmail" name="send_email" checked>
+                                <label class="form-check-label" for="sendEmail">
+                                    {% trans "Send reactivation notification email" %}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notifyTeam" name="notify_team">
+                                <label class="form-check-label" for="notifyTeam">
+                                    {% trans "Notify other team members (owners and admins)" %}
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                            <a href="{% url 'accounts:org-member-list' pk=organization.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success" id="reactivateBtn">
+                                    <i class="fas fa-user-check me-2"></i>
+                                    {% trans "Reactivate Member" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        {% trans "Need Help?" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="helpAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                    {% trans "What permissions will the member have?" %}
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <p class="mb-2">{% trans "The member will have the same permissions they had before deactivation:" %}</p>
+                                    <ul class="mb-0">
+                                        <li><strong>{% trans "Role" %}:</strong> {{ member.get_role_display }}</li>
+                                        <li><strong>{% trans "Can manage organization" %}:</strong> {{ member.can_manage_organization|yesno:_("Yes,No") }}</li>
+                                        <li><strong>{% trans "Can manage users" %}:</strong> {{ member.can_manage_users|yesno:_("Yes,No") }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    {% trans "Will they see their previous work?" %}
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <p>{% trans "Yes! All their previous contributions are preserved:" %}</p>
+                                    <ul class="mb-0">
+                                        <li>{% trans "Feedback and comments they created" %}</li>
+                                        <li>{% trans "Assigned tasks and tickets" %}</li>
+                                        <li>{% trans "Reports and analytics they worked on" %}</li>
+                                        <li>{% trans "Team conversations and discussions" %}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    {% trans "Can I change their role during reactivation?" %}
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <p>{% trans "No, role changes cannot be made during reactivation. The member will be restored with their original role." %}</p>
+                                    <p class="mb-0">{% trans "If you need to change their role, you can reactivate them first, then update their role separately from the member management page." %}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-lg {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .bg-opacity-10 {
+        opacity: 0.1;
+    }
+    
+    .card {
+        border-radius: 10px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .list-group-item {
+        border-color: rgba(0,0,0,0.08);
+    }
+    
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+    
+    .form-check-input:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+    
+    .btn-success {
+        background-color: #198754;
+        border-color: #198754;
+    }
+    
+    .btn-success:hover {
+        background-color: #157347;
+        border-color: #146c43;
+    }
+    
+    .btn-success:disabled {
+        background-color: #198754;
+        border-color: #198754;
+        opacity: 0.65;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+        padding: 0.35em 0.65em;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .accordion-button:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+    
+    @media (max-width: 768px) {
+        .avatar-lg {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .avatar-lg span {
+            font-size: 1.5rem;
+        }
+        
+        .row.g-3 {
+            --bs-gutter-y: 1rem;
+        }
+        
+        .d-flex.align-items-start {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .d-flex.align-items-start .me-3 {
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .d-flex.justify-content-between > * {
+            width: 100%;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('reactivateForm');
+        const reactivateBtn = document.getElementById('reactivateBtn');
+        const confirmCheckbox = document.getElementById('confirmReactivate');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const charCount = document.getElementById('charCount');
+        const sendEmailCheckbox = document.getElementById('sendEmail');
+        
+        // Character counter for welcome message
+        if (welcomeMessage && charCount) {
+            welcomeMessage.addEventListener('input', function() {
+                const count = this.value.length;
+                charCount.textContent = count;
+                
+                if (count > 500) {
+                    this.classList.add('is-invalid');
+                    charCount.classList.add('text-danger');
+                } else {
+                    this.classList.remove('is-invalid');
+                    charCount.classList.remove('text-danger');
+                }
+            });
+            
+            // Initialize count
+            charCount.textContent = welcomeMessage.value.length;
+        }
+        
+        // Add confirmation dialog on submit
+        if (form && reactivateBtn) {
+            form.addEventListener('submit', function(e) {
+                if (confirmCheckbox && !confirmCheckbox.checked) {
+                    e.preventDefault();
+                    alert('{% trans "Please confirm that you want to reactivate this member by checking the box." %}');
+                    confirmCheckbox.focus();
+                    return false;
+                }
+                
+                const memberName = "{{ member.user.get_full_name|default:member.user.email|escapejs }}";
+                const organizationName = "{{ organization.name|escapejs }}";
+                
+                // Show final confirmation
+                const confirmationMessage = `{% trans "Are you sure you want to reactivate" %} ${memberName} {% trans "for" %} ${organizationName}?\n\n{% trans "They will immediately regain access to the organization." %}`;
+                
+                if (!confirm(confirmationMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Show loading state
+                reactivateBtn.disabled = true;
+                reactivateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> {% trans "Reactivating..." %}';
+                
+                // If sending email is checked, show additional message
+                if (sendEmailCheckbox && sendEmailCheckbox.checked) {
+                    reactivateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> {% trans "Reactivating and sending notification..." %}';
+                }
+            });
+        }
+        
+        // Toggle notification options based on email checkbox
+        if (sendEmailCheckbox) {
+            const notifyTeamCheckbox = document.getElementById('notifyTeam');
+            
+            sendEmailCheckbox.addEventListener('change', function() {
+                if (notifyTeamCheckbox) {
+                    notifyTeamCheckbox.disabled = !this.checked;
+                    if (!this.checked) {
+                        notifyTeamCheckbox.checked = false;
+                    }
+                }
+            });
+            
+            // Initialize state
+            if (notifyTeamCheckbox) {
+                notifyTeamCheckbox.disabled = !sendEmailCheckbox.checked;
+            }
+        }
+        
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', function(e) {
+            if (confirmCheckbox && confirmCheckbox.checked && form && !form.submitted) {
+                const confirmationMessage = '{% trans "You have not completed the reactivation. Are you sure you want to leave?" %}';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+        
+        // Remove beforeunload when form is submitted
+        form.addEventListener('submit', function() {
+            this.submitted = true;
+            window.removeEventListener('beforeunload');
+        });
+        
+        // Mobile accordion behavior
+        if (window.innerWidth < 768) {
+            const helpAccordion = document.getElementById('helpAccordion');
+            if (helpAccordion) {
+                // Auto-collapse all accordion items on mobile
+                const collapses = helpAccordion.querySelectorAll('.accordion-collapse');
+                collapses.forEach(collapse => {
+                    collapse.classList.remove('show');
+                });
+                
+                // Add click handlers for better mobile UX
+                const accordionButtons = helpAccordion.querySelectorAll('.accordion-button');
+                accordionButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        // Close other open accordion items
+                        accordionButtons.forEach(otherButton => {
+                            if (otherButton !== this && otherButton.classList.contains('collapsed')) {
+                                const targetId = otherButton.getAttribute('data-bs-target');
+                                const target = document.querySelector(targetId);
+                                if (target && target.classList.contains('show')) {
+                                    otherButton.click();
+                                }
+                            }
+                        });
+                    });
+                });
+            }
+        }
+        
+        // Add visual feedback for confirmation checkbox
+        if (confirmCheckbox) {
+            confirmCheckbox.addEventListener('change', function() {
+                const label = this.parentElement.querySelector('.form-check-label');
+                if (label) {
+                    if (this.checked) {
+                        label.classList.add('text-success');
+                        label.classList.remove('text-muted');
+                    } else {
+                        label.classList.remove('text-success');
+                        label.classList.add('text-muted');
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

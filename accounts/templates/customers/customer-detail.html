@@ -1,0 +1,207 @@
+<!-- customers/customer_detail.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ customer.get_full_name }} - {% trans "Customer Details" %}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'accounts:customer-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Customers" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ customer.get_full_name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Customer Header -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-lg bg-primary rounded-circle d-flex align-items-center justify-content-center me-4">
+                            <span class="text-white fw-bold fs-4">
+                                {{ customer.first_name|first|upper }}{{ customer.last_name|first|upper }}
+                            </span>
+                        </div>
+                        <div>
+                            <h1 class="h3 mb-1">{{ customer.get_full_name }}</h1>
+                            <p class="text-muted mb-1">{{ customer.email }}</p>
+                            <div class="d-flex align-items-center">
+                                <code class="bg-light px-2 py-1 rounded me-3">{{ customer.customer_id }}</code>
+                                <span class="badge 
+                                    {% if customer.segment == 'vip' %}bg-primary
+                                    {% elif customer.segment == 'loyal' %}bg-success
+                                    {% elif customer.segment == 'regular' %}bg-info
+                                    {% elif customer.segment == 'new' %}bg-secondary
+                                    {% elif customer.segment == 'at_risk' %}bg-warning
+                                    {% else %}bg-danger{% endif %} me-2">
+                                    {{ customer.get_segment_display }}
+                                </span>
+                                {% if customer.user %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-person-check me-1"></i>{% trans "Registered User" %}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group">
+                        <a href="{% url 'accounts:customer-update' organization.pk customer.pk %}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>{% trans "Edit" %}
+                        </a>
+                        <a href="{% url 'accounts:customer-delete' organization.pk customer.pk %}" 
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-2"></i>{% trans "Delete" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Customer Details -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i>
+                        {% trans "Customer Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-muted" width="40%">{% trans "Email" %}</th>
+                                        <td>{{ customer.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Phone" %}</th>
+                                        <td>{{ customer.phone|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Language" %}</th>
+                                        <td>{{ customer.get_language_preference_display }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th class="text-muted" width="40%">{% trans "Country" %}</th>
+                                        <td>{{ customer.country|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Timezone" %}</th>
+                                        <td>{{ customer.timezone }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">{% trans "Created" %}</th>
+                                        <td>{{ customer.created_at|date:"F j, Y" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Engagement Metrics -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up text-primary me-2"></i>
+                        {% trans "Engagement Metrics" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-primary fw-bold">{{ customer.total_interactions }}</h3>
+                                <p class="text-muted mb-0">{% trans "Total Interactions" %}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-success fw-bold">{{ customer.total_purchases }}</h3>
+                                <p class="text-muted mb-0">{% trans "Total Purchases" %}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-info fw-bold">${{ customer.lifetime_value }}</h3>
+                                <p class="text-muted mb-0">{% trans "Lifetime Value" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if customer.last_interaction_date %}
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            {% trans "Last active:" %} {{ customer.last_interaction_date|date:"F j, Y g:i A" }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Tags -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-tags text-primary me-2"></i>
+                        {% trans "Tags" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if customer.tags.all %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tag in customer.tags.all %}
+                        <span class="badge bg-secondary">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">{% trans "No tags assigned" %}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            {% if customer.metadata %}
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-code-slash text-primary me-2"></i>
+                        {% trans "Additional Data" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded small"><code>{{ customer.metadata|pprint }}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}

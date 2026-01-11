@@ -1,0 +1,573 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Sign In - CX Analytics" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.login-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.login-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.login-visual {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.login-visual-content {
+    text-align: center;
+}
+
+.visual-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.visual-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.visual-features {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+}
+
+.visual-features li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.visual-features li i {
+    color: #a78bfa;
+}
+
+.login-form-container {
+    padding: 3rem 2.5rem;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.login-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.login-subtitle {
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.social-login {
+    margin-bottom: 2rem;
+}
+
+.social-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.social-btn:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+    transform: translateY(-1px);
+}
+
+.social-btn.google { color: #db4437; }
+.social-btn.github { color: #333; }
+.social-btn.facebook { color: #1877f2; }
+.social-btn.linkedin { color: #0a66c2; }
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #6b7280;
+    margin: 2rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.divider span {
+    padding: 0 1rem;
+    font-size: 0.875rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.password-input {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 4px;
+    border: 2px solid #d1d5db;
+}
+
+.forgot-password {
+    color: #4f46e5;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-login:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.login-footer p {
+    color: #6b7280;
+    margin: 0;
+}
+
+.signup-link {
+    color: #4f46e5;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 0.5rem;
+}
+
+.signup-link:hover {
+    text-decoration: underline;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid transparent;
+}
+
+.alert-error {
+    color: #dc2626;
+    background-color: #fef2f2;
+    border-color: #fecaca;
+}
+
+.alert-success {
+    color: #059669;
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.alert-info {
+    color: #2563eb;
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .login-visual {
+        display: none;
+    }
+    
+    .login-form-container {
+        padding: 2rem 1.5rem;
+    }
+    
+    .social-buttons {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-section {
+        padding: 1rem;
+    }
+    
+    .login-card {
+        border-radius: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="login-section py-5">
+    <p></p><br>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="login-card">
+                    <div class="row g-0">
+                        <!-- Visual Side -->
+                        <div class="col-lg-6 d-none d-lg-block">
+                            <div class="login-visual">
+                                <div class="login-visual-content">
+                                    <div class="visual-icon">
+                                        <i class="bi bi-graph-up-arrow"></i>
+                                    </div>
+                                    <h3 class="visual-title">{% trans "Welcome Back!" %}</h3>
+                                    <p>{% trans "Sign in to access your customer experience insights and AI-powered analytics." %}</p>
+                                    
+                                    <ul class="visual-features">
+                                        <li>
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            <span>{% trans "AI-Powered Analytics" %}</span>
+                                        </li>
+                                        <li>
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            <span>{% trans "Real-time Dashboards" %}</span>
+                                        </li>
+                                        <li>
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            <span>{% trans "Strategic Insights" %}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Side -->
+                        <div class="col-lg-6">
+                            <div class="login-form-container">
+                                <div class="login-header">
+                                    <div class="login-logo">
+                                        <i class="bi bi-graph-up-arrow text-primary"></i>
+                                        <span>CX Analytics</span>
+                                    </div>
+                                    <h1 class="login-title">{% trans "Sign In" %}</h1>
+                                    <p class="login-subtitle">
+                                        {% trans "Welcome back! Please sign in to your account." %}
+                                    </p>
+                                </div>
+
+                                <!-- Messages -->
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="alert alert-{{ message.tags }}">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+
+                                <!-- Form Errors -->
+                                {% if form.errors %}
+                                    <div class="alert alert-error">
+                                        <strong>{% trans "Error:" %}</strong>
+                                        {% trans "Please correct the errors below." %}
+                                        {% if form.non_field_errors %}
+                                            <ul class="mb-0 mt-1">
+                                                {% for error in form.non_field_errors %}
+                                                    <li>{{ error }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                              
+                                <!-- Login Form -->
+                                <form method="post" action="{% url 'accounts:login' %}">
+                                    {% csrf_token %}
+                                    
+                                    <!-- Email Field -->
+                                    <div class="form-group">
+                                        <label for="id_username" class="form-label">
+                                            {% trans "Email Address" %}
+                                        </label>
+                                        <input type="email" 
+                                               name="username" 
+                                               id="id_username" 
+                                               class="form-control" 
+                                               placeholder="{% trans 'Enter your email' %}"
+                                               value="{{ form.username.value|default:'' }}"
+                                               required
+                                               autofocus>
+                                        {% if form.username.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {{ form.username.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Password Field -->
+                                    <div class="form-group">
+                                        <label for="id_password" class="form-label">
+                                            {% trans "Password" %}
+                                        </label>
+                                        <div class="password-input">
+                                            <input type="password" 
+                                                   name="password" 
+                                                   id="id_password" 
+                                                   class="form-control" 
+                                                   placeholder="{% trans 'Enter your password' %}"
+                                                   required>
+                                            <button type="button" class="toggle-password" data-target="id_password">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        {% if form.password.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {{ form.password.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Remember Me & Forgot Password -->
+                                    <div class="form-options">
+                                        <label class="remember-me">
+                                            <input type="checkbox" name="remember" id="id_remember">
+                                            <span>{% trans "Remember me" %}</span>
+                                        </label>
+                                        <a href="{% url 'accounts:password-reset' %}" class="forgot-password">
+                                            {% trans "Forgot password?" %}
+                                        </a>
+                                    </div>
+
+                                    <!-- Hidden next parameter if provided -->
+                                    {% if request.GET.next %}
+                                        <input type="hidden" name="next" value="{{ request.GET.next }}">
+                                    {% endif %}
+
+                                    <!-- Submit Button -->
+                                    <button type="submit" class="btn-login">
+                                        {% trans "Sign In" %}
+                                    </button>
+                                </form>
+
+                                <!-- Sign Up Link -->
+                                <div class="login-footer">
+                                    <p>
+                                        {% trans "Don't have an account?" %}
+                                        <a href="{% url 'accounts:register' %}" class="signup-link">
+                                            {% trans "Sign up" %}
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+    });
+
+    // Form submission enhancement
+    const loginForm = document.querySelector('form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    {% trans "Signing In..." %}
+                `;
+                
+                // Re-enable button after 5 seconds in case of error
+                setTimeout(() => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '{% trans "Sign In" %}';
+                }, 5000);
+            }
+        });
+    }
+
+    // Auto-focus on email field (if not already focused by autofocus attribute)
+    const emailField = document.getElementById('id_username');
+    if (emailField && !emailField.value) {
+        emailField.focus();
+    }
+
+    // Remember me checkbox functionality
+    const rememberCheckbox = document.getElementById('id_remember');
+    if (rememberCheckbox) {
+        // Check if browser has saved credentials
+        if (localStorage.getItem('rememberEmail') && emailField) {
+            emailField.value = localStorage.getItem('rememberEmail');
+            rememberCheckbox.checked = true;
+        }
+        
+        rememberCheckbox.addEventListener('change', function() {
+            if (this.checked && emailField && emailField.value) {
+                localStorage.setItem('rememberEmail', emailField.value);
+            } else {
+                localStorage.removeItem('rememberEmail');
+            }
+        });
+    }
+
+    // Display any URL parameters as alerts (for password reset success, etc.)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('password_reset') && urlParams.get('password_reset') === 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success';
+        alertDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i> {% trans "Password reset successful! Please log in with your new password." %}';
+        document.querySelector('.login-form-container').insertBefore(alertDiv, document.querySelector('.login-header').nextSibling);
+    }
+    
+    if (urlParams.has('registered') && urlParams.get('registered') === 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success';
+        alertDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i> {% trans "Registration successful! Please log in to continue." %}';
+        document.querySelector('.login-form-container').insertBefore(alertDiv, document.querySelector('.login-header').nextSibling);
+    }
+});
+</script>
+{% endblock %}

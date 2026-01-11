@@ -1,0 +1,143 @@
+{% extends 'organizations/base.html' %}
+{% load i18n %}
+
+{% block organization_content %}
+<div class="card border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h4 class="mb-0">
+            <i class="bi bi-person-x me-2"></i>
+            {% trans "Remove Team Member" %}
+        </h4>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <h5 class="alert-heading">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {% trans "Confirm Member Removal" %}
+            </h5>
+            <p class="mb-0">
+                {% trans "You are about to remove" %} <strong>{{ object.user.get_full_name|default:object.user.email }}</strong> 
+                {% trans "from the organization" %} <strong>"{{ object.organization.name }}"</strong>.
+            </p>
+        </div>
+
+        <div class="mb-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>{% trans "Member Details" %}</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>{% trans "Name" %}</th>
+                            <td>{{ object.user.get_full_name|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Email" %}</th>
+                            <td>{{ object.user.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Role" %}</th>
+                            <td>
+                                <span class="badge bg-{% if object.role == 'owner' %}primary{% elif object.role == 'admin' %}info{% elif object.role == 'manager' %}warning{% else %}secondary{% endif %}">
+                                    {{ object.get_role_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Member Since" %}</th>
+                            <td>{{ object.created_at|date:"M j, Y" }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>{% trans "What will happen:" %}</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="bi bi-x-circle text-danger me-2"></i>
+                            {% trans "Lose access to the organization" %}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-x-circle text-danger me-2"></i>
+                            {% trans "No longer view or edit organization data" %}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-x-circle text-danger me-2"></i>
+                            {% trans "Be removed from all teams and projects" %}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-x-circle text-danger me-2"></i>
+                            {% trans "Lose all permissions and roles" %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            {% if object.role == 'owner' and object.organization.members.count == 1 %}
+            <div class="alert alert-danger mt-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>{% trans "Cannot Remove Owner" %}</strong><br>
+                {% trans "You cannot remove the only owner of the organization. Please transfer ownership to another member first." %}
+            </div>
+            {% endif %}
+
+            {% if object.user == request.user %}
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>{% trans "You are removing yourself" %}</strong><br>
+                {% trans "If you remove yourself from this organization, you will lose all access immediately." %}
+            </div>
+            {% endif %}
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if object.role != 'owner' or object.organization.members.count > 1 %}
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirm_removal" 
+                           onchange="toggleRemoveButton()">
+                    <label class="form-check-label" for="confirm_removal">
+                        {% trans "I understand that this action cannot be undone and the user will lose all access immediately." %}
+                    </label>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'organizations:detail' object.organization.slug %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    {% trans "Cancel" %}
+                </a>
+                {% if not object.role == 'owner' or object.organization.members.count > 1 %}
+                <button type="submit" id="removeButton" class="btn btn-warning" disabled>
+                    <i class="bi bi-person-x me-2"></i>
+                    {% if object.user == request.user %}
+                    {% trans "Remove Myself" %}
+                    {% else %}
+                    {% trans "Remove Member" %}
+                    {% endif %}
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRemoveButton() {
+    const confirmCheckbox = document.getElementById('confirm_removal');
+    const removeButton = document.getElementById('removeButton');
+    
+    if (confirmCheckbox && removeButton) {
+        removeButton.disabled = !confirmCheckbox.checked;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleRemoveButton();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,412 @@
+<!-- organizations/organization-form.html -->
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} - {% trans "Feedback Analytics" %}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'accounts:org-list' %}" class="text-decoration-none">
+                                    {% trans "Organizations" %}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <!-- Main Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white py-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-building me-3 fs-4"></i>
+                            <div>
+                                <h4 class="mb-0">{{ page_title }}</h4>
+                                <p class="mb-0 opacity-75">{% trans "Set up your organization profile and preferences" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Messages -->
+                        {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <form method="post" enctype="multipart/form-data" novalidate id="organization-form">
+                            {% csrf_token %}
+                            
+                            <!-- Non-field Errors -->
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {% for error in form.non_field_errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <div class="row">
+                                <!-- Left Column - Basic Information -->
+                                <div class="col-lg-8">
+                                    <div class="mb-4">
+                                        <h5 class="mb-3 text-primary border-bottom pb-2">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            {% trans "Basic Information" %}
+                                        </h5>
+                                        
+                                        <!-- Organization Name -->
+                                        <div class="mb-4">
+                                            <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+                                                {{ form.name.label }} *
+                                            </label>
+                                            {{ form.name }}
+                                            {% if form.name.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.name.errors %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                {% trans "The official name of your organization as you want it to appear in the system." %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Industry and Country -->
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.industry.id_for_label }}" class="form-label fw-semibold">
+                                                        {{ form.industry.label }}
+                                                    </label>
+                                                    {{ form.industry }}
+                                                    {% if form.industry.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.industry.errors %}
+                                                        <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.country.id_for_label }}" class="form-label fw-semibold">
+                                                        {{ form.country.label }}
+                                                    </label>
+                                                    {{ form.country }}
+                                                    {% if form.country.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.country.errors %}
+                                                        <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Language and Timezone -->
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.language_code.id_for_label }}" class="form-label fw-semibold">
+                                                        {{ form.language_code.label }}
+                                                    </label>
+                                                    {{ form.language_code }}
+                                                    {% if form.language_code.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.language_code.errors %}
+                                                        <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="form-text">
+                                                        {% trans "Primary language for your organization" %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.timezone.id_for_label }}" class="form-label fw-semibold">
+                                                        {{ form.timezone.label }}
+                                                    </label>
+                                                    {{ form.timezone }}
+                                                    {% if form.timezone.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.timezone.errors %}
+                                                        <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="form-text">
+                                                        {% trans "Default timezone for reporting" %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Website -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.website.id_for_label }}" class="form-label fw-semibold">
+                                                {{ form.website.label }}
+                                            </label>
+                                            {{ form.website }}
+                                            {% if form.website.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.website.errors %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Logo Upload -->
+                                        <div class="mb-3">
+                                            <label for="{{ form.logo.id_for_label }}" class="form-label fw-semibold">
+                                                {{ form.logo.label }}
+                                            </label>
+                                            {{ form.logo }}
+                                            {% if form.logo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.logo.errors %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                {% trans "Recommended: Square image, minimum 200x200 pixels, PNG or JPG format." %}
+                                            </div>
+                                            
+                                            <!-- Logo Preview -->
+                                            <div id="logo-preview" class="mt-2 d-none">
+                                                <img id="logo-preview-image" src="#" alt="Logo preview" class="rounded border" style="max-height: 120px; max-width: 200px;">
+                                                <button type="button" id="remove-logo-preview" class="btn btn-sm btn-outline-danger ms-2">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column - Subscription & Features -->
+                                <div class="col-lg-4">
+                                    <div class="mb-4">
+                                        <h5 class="mb-3 text-primary border-bottom pb-2">
+                                            <i class="bi bi-gear me-2"></i>
+                                            {% trans "Subscription & Features" %}
+                                        </h5>
+                                        
+                                        <!-- Subscription Tier -->
+                                        <div class="mb-4">
+                                            <label for="{{ form.subscription_tier.id_for_label }}" class="form-label fw-semibold">
+                                                {{ form.subscription_tier.label }}
+                                            </label>
+                                            {{ form.subscription_tier }}
+                                            {% if form.subscription_tier.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.subscription_tier.errors %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                {% trans "Choose the subscription plan that fits your needs." %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Monthly Feedback Limit -->
+                                        <div class="mb-4">
+                                            <label for="{{ form.monthly_feedback_limit.id_for_label }}" class="form-label fw-semibold">
+                                                {{ form.monthly_feedback_limit.label }}
+                                            </label>
+                                            {{ form.monthly_feedback_limit }}
+                                            {% if form.monthly_feedback_limit.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.monthly_feedback_limit.errors %}
+                                                <i class="bi bi-x-circle-fill me-1"></i>{{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                {% trans "Maximum number of feedback items to analyze per month. Set to 0 for unlimited." %}
+                                            </div>
+                                        </div>
+
+                                        <!-- AI Analysis Toggle -->
+                                        <div class="form-check form-switch mb-3">
+                                            {{ form.ai_analysis_enabled }}
+                                            <label class="form-check-label fw-semibold" for="{{ form.ai_analysis_enabled.id_for_label }}">
+                                                {{ form.ai_analysis_enabled.label }}
+                                            </label>
+                                            <div class="form-text">
+                                                {% trans "Enable AI-powered sentiment analysis, theme detection, and automated insights." %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Help Card -->
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <i class="bi bi-question-circle text-primary me-2"></i>
+                                                {% trans "Need Help?" %}
+                                            </h6>
+                                            <p class="card-text small">
+                                                {% trans "Contact our support team if you need assistance setting up your organization." %}
+                                            </p>
+                                            <a href="mailto:support@example.com" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-envelope me-1"></i>
+                                                {% trans "Contact Support" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-4">
+                                <a href="{{ cancel_url|default:'#' }}" class="btn btn-outline-secondary px-4">
+                                    <i class="bi bi-arrow-left me-2"></i>
+                                    {% trans "Cancel" %}
+                                </a>
+                                <button type="submit" class="btn btn-primary px-4" id="submit-btn">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    {{ submit_text }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('organization-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const logoInput = document.getElementById('{{ form.logo.id_for_label }}');
+    const logoPreview = document.getElementById('logo-preview');
+    const logoPreviewImage = document.getElementById('logo-preview-image');
+    const removeLogoPreviewBtn = document.getElementById('remove-logo-preview');
+
+    // Form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Basic validation
+            const nameField = document.getElementById('{{ form.name.id_for_label }}');
+            if (!nameField.value.trim()) {
+                e.preventDefault();
+                nameField.classList.add('is-invalid');
+                nameField.focus();
+                return;
+            }
+            
+            // Disable submit button to prevent double submission
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Creating Organization..." %}';
+            }
+        });
+    }
+
+    // Real-time validation for required fields
+    const nameField = document.getElementById('{{ form.name.id_for_label }}');
+    if (nameField) {
+        nameField.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    }
+
+    // Logo preview functionality
+    if (logoInput && logoPreview && logoPreviewImage) {
+        logoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoPreviewImage.src = e.target.result;
+                    logoPreview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Remove logo preview
+        if (removeLogoPreviewBtn) {
+            removeLogoPreviewBtn.addEventListener('click', function() {
+                logoInput.value = '';
+                logoPreview.classList.add('d-none');
+                logoPreviewImage.src = '#';
+            });
+        }
+    }
+
+    // Add loading state to all form submissions
+    const allForms = document.querySelectorAll('form');
+    allForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn && !submitBtn.disabled) {
+                submitBtn.disabled = true;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.setAttribute('data-original-text', originalText);
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Processing..." %}';
+            }
+        });
+    });
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .is-valid {
+        border-color: #198754 !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    .form-control:focus.is-valid,
+    .form-select:focus.is-valid {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

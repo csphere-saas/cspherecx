@@ -1,0 +1,413 @@
+<!-- accounts/dashboard.html -->
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} - {% trans "Feedback Analytics" %}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">{% trans "Welcome back" %}, {{ request.user.get_full_name|default:request.user.username }}!</h1>
+                    <p class="text-muted mb-0">{% trans "Here's what's happening with your feedback analytics today." %}</p>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        {% trans "Last 30 days" %}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">{% trans "Today" %}</a></li>
+                        <li><a class="dropdown-item" href="#">{% trans "Last 7 days" %}</a></li>
+                        <li><a class="dropdown-item active" href="#">{% trans "Last 30 days" %}</a></li>
+                        <li><a class="dropdown-item" href="#">{% trans "Last 90 days" %}</a></li>
+                        <li><a class="dropdown-item" href="#">{% trans "This year" %}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Total Feedback" %}</h6>
+                            <h3 class="fw-bold text-primary">1,248</h3>
+                            <span class="badge bg-success">
+                                <i class="bi bi-arrow-up me-1"></i>12.5%
+                            </span>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-chat-text text-primary fs-4"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2">{% trans "From last month" %}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Response Rate" %}</h6>
+                            <h3 class="fw-bold text-success">68%</h3>
+                            <span class="badge bg-success">
+                                <i class="bi bi-arrow-up me-1"></i>5.2%
+                            </span>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-graph-up text-success fs-4"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2">{% trans "From last month" %}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Avg. Sentiment" %}</h6>
+                            <h3 class="fw-bold text-info">7.2/10</h3>
+                            <span class="badge bg-danger">
+                                <i class="bi bi-arrow-down me-1"></i>2.1%
+                            </span>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-emoji-smile text-info fs-4"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2">{% trans "From last month" %}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Active Projects" %}</h6>
+                            <h3 class="fw-bold text-warning">12</h3>
+                            <span class="badge bg-success">
+                                <i class="bi bi-plus me-1"></i>2
+                            </span>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-folder text-warning fs-4"></i>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2">{% trans "2 new this month" %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="row">
+        <!-- Left Column - Charts & Analytics -->
+        <div class="col-lg-8">
+            <!-- Sentiment Trend Chart -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-graph-up text-primary me-2"></i>
+                            {% trans "Sentiment Trend" %}
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                {% trans "All Channels" %}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#">{% trans "All Channels" %}</a></li>
+                                <li><a class="dropdown-item" href="#">{% trans "Web" %}</a></li>
+                                <li><a class="dropdown-item" href="#">{% trans "Mobile" %}</a></li>
+                                <li><a class="dropdown-item" href="#">{% trans "Email" %}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <!-- Chart will be rendered here by JavaScript -->
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-light rounded">
+                            <div class="text-center text-muted">
+                                <i class="bi bi-bar-chart display-4 d-block mb-2"></i>
+                                <p>{% trans "Sentiment trend chart will appear here" %}</p>
+                                <small>{% trans "Integration with charting library required" %}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Sources -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent py-3">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-pie-chart text-primary me-2"></i>
+                                {% trans "Feedback Sources" %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 250px;">
+                                <!-- Pie chart will be rendered here -->
+                                <div class="d-flex align-items-center justify-content-center h-100 bg-light rounded">
+                                    <div class="text-center text-muted">
+                                        <i class="bi bi-pie-chart display-4 d-block mb-2"></i>
+                                        <small>{% trans "Source distribution chart" %}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent py-3">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-tags text-primary me-2"></i>
+                                {% trans "Top Themes" %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="theme-list">
+                                {% for theme in sample_themes %}
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="fw-semibold">{{ theme.name }}</span>
+                                        <div class="progress mt-1" style="height: 6px; width: 200px;">
+                                            <div class="progress-bar {{ theme.color }}" role="progressbar" 
+                                                 style="width: {{ theme.percentage }}%;"></div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-light text-dark">{{ theme.count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Organization & Quick Actions -->
+        <div class="col-lg-4">
+            <!-- Organization Card -->
+            {% if organization %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-building text-primary me-2"></i>
+                        {% trans "Organization" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if organization.logo %}
+                        <img src="{{ organization.logo.url }}" alt="{{ organization.name }}" 
+                             class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-primary rounded d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px;">
+                            <i class="bi bi-building text-white"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ organization.name }}</h6>
+                            <small class="text-muted">
+                                {{ organization.get_industry_display|default:_("No industry") }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="organization-info small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">{% trans "Subscription" %}:</span>
+                            <span class="fw-semibold">{{ organization.get_subscription_tier_display }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">{% trans "Members" %}:</span>
+                            <span class="fw-semibold">{{ organization.members.count }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">{% trans "AI Analysis" %}:</span>
+                            <span class="badge bg-{% if organization.ai_analysis_enabled %}success{% else %}secondary{% endif %}">
+                                {% if organization.ai_analysis_enabled %}{% trans "Enabled" %}{% else %}{% trans "Disabled" %}{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'accounts:org-detail' organization.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-eye me-2"></i>{% trans "View Details" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- No Organization Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-building display-4 text-muted d-block mb-3"></i>
+                    <h5 class="text-muted">{% trans "No Organization" %}</h5>
+                    <p class="text-muted mb-3">{% trans "You're not associated with any organization yet." %}</p>
+                    <a href="{% url 'accounts:org-create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>{% trans "Create Organization" %}
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning text-primary me-2"></i>
+                        {% trans "Quick Actions" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            {% trans "Collect New Feedback" %}
+                        </a>
+                        <a href="#" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-graph-up me-2"></i>
+                            {% trans "View Reports" %}
+                        </a>
+                        <a href="#" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-people me-2"></i>
+                            {% trans "Manage Team" %}
+                        </a>
+                        <a href="#" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-gear me-2"></i>
+                            {% trans "Settings" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock text-primary me-2"></i>
+                        {% trans "Recent Activity" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-timeline">
+                        {% for activity in sample_activities %}
+                        <div class="activity-item d-flex mb-3">
+                            <div class="activity-icon me-3">
+                                <i class="bi bi-{{ activity.icon }} text-{{ activity.color }}"></i>
+                            </div>
+                            <div class="activity-content flex-grow-1">
+                                <p class="mb-1 small">{{ activity.message }}</p>
+                                <small class="text-muted">{{ activity.time }}</small>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                            <p>{% trans "No recent activity" %}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.theme-list .progress {
+    background-color: #e9ecef;
+}
+
+.activity-timeline .activity-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Sample data for charts (replace with actual data from backend)
+    const sampleThemes = [
+        { name: '{% trans "User Interface" %}', percentage: 75, count: 324, color: 'bg-primary' },
+        { name: '{% trans "Performance" %}', percentage: 60, count: 256, color: 'bg-success' },
+        { name: '{% trans "Customer Support" %}', percentage: 45, count: 198, color: 'bg-info' },
+        { name: '{% trans "Feature Request" %}', percentage: 30, count: 132, color: 'bg-warning' },
+        { name: '{% trans "Billing" %}', percentage: 20, count: 87, color: 'bg-danger' }
+    ];
+
+    const sampleActivities = [
+        { icon: 'chat-dots', color: 'primary', message: '{% trans "New feedback collected from web form" %}', time: '{% trans "2 minutes ago" %}' },
+        { icon: 'graph-up', color: 'success', message: '{% trans "Weekly report generated" %}', time: '{% trans "1 hour ago" %}' },
+        { icon: 'person-plus', color: 'info', message: '{% trans "New team member added" %}', time: '{% trans "3 hours ago" %}' },
+        { icon: 'exclamation-triangle', color: 'warning', message: '{% trans "Negative sentiment detected in feedback" %}', time: '{% trans "5 hours ago" %}' },
+        { icon: 'check-circle', color: 'success', message: '{% trans "Project status updated" %}', time: '{% trans "1 day ago" %}' }
+    ];
+
+    // You can integrate with Chart.js, D3.js, or any other charting library here
+    console.log('Dashboard loaded. Ready to integrate with charting libraries.');
+    
+    // Example: Initialize charts when charting library is available
+    // initializeCharts(sampleThemes);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Products" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-boxes me-2"></i>{% trans "Products" %}</h1>
+            <p class="text-muted mb-0">{% blocktrans with org_name=organization.name %}Manage products for {{ org_name }}{% endblocktrans %}</p>
+        </div>
+        <a href="{% url 'accounts:product-create' organization_pk=organization.pk %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> {% trans "Add Product" %}
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_products }}</h4>
+                            <p class="mb-0">{% trans "Total Products" %}</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ products|length }}</h4>
+                            <p class="mb-0">{% trans "Displayed" %}</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-list fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="fas fa-filter me-2"></i>{% trans "Filters & Search" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "Search Products" %}</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="{% trans 'Search by name, SKU, category...' %}" value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{% trans "Category" %}</label>
+                    <select name="category" class="form-select">
+                        <option value="">{% trans "All Categories" %}</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">{% trans "Product Type" %}</label>
+                    <select name="is_service" class="form-select">
+                        <option value="">{% trans "All Types" %}</option>
+                        <option value="false" {% if selected_service == 'false' %}selected{% endif %}>{% trans "Physical Products" %}</option>
+                        <option value="true" {% if selected_service == 'true' %}selected{% endif %}>{% trans "Services" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search me-1"></i> {% trans "Search" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">{% trans "Product List" %}</h5>
+            <span class="badge bg-secondary">
+                {% blocktrans count counter=products|length %}
+                    {{ counter }} product
+                {% plural %}
+                    {{ counter }} products
+                {% endblocktrans %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% if products %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>{% trans "Product" %}</th>
+                                <th>{% trans "SKU" %}</th>
+                                <th>{% trans "Category" %}</th>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Created" %}</th>
+                                <th>{% trans "Actions" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if product.image %}
+                                                <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                                     class="rounded me-3" width="50" height="50" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-box text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <strong class="d-block">{{ product.name }}</strong>
+                                                {% if product.description %}
+                                                    <small class="text-muted">{{ product.description|truncatewords:8 }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if product.sku %}
+                                            <code>{{ product.sku }}</code>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if product.category %}
+                                            <span class="badge bg-info">{{ product.category }}</span>
+                                        {% else %}
+                                            <span class="text-muted">{% trans "Uncategorized" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if product.is_service %}bg-warning{% else %}bg-success{% endif %}">
+                                            {% if product.is_service %}
+                                                <i class="fas fa-concierge-bell me-1"></i>{% trans "Service" %}
+                                            {% else %}
+                                                <i class="fas fa-box me-1"></i>{% trans "Product" %}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ product.created|date:"M d, Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'accounts:product-detail' organization_pk=organization.pk pk=product.pk %}" 
+                                               class="btn btn-outline-primary" title="{% trans 'View' %}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'accounts:product-update' organization_pk=organization.pk pk=product.pk %}" 
+                                               class="btn btn-outline-secondary" title="{% trans 'Edit' %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'accounts:product-delete' organization_pk=organization.pk pk=product.pk %}" 
+                                               class="btn btn-outline-danger" title="{% trans 'Delete' %}">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="{% trans 'Page navigation' %}" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'First' %}">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'Previous' %}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    {% blocktrans with number=page_obj.number num_pages=page_obj.paginator.num_pages %}
+                                        Page {{ number }} of {{ num_pages }}
+                                    {% endblocktrans %}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'Next' %}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="{% trans 'Last' %}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-boxes fa-4x text-muted mb-3"></i>
+                    <h4>{% trans "No products found" %}</h4>
+                    <p class="text-muted mb-4">
+                        {% if search_query or selected_category or selected_service %}
+                            {% trans "Try adjusting your search filters or" %}
+                        {% endif %}
+                        {% trans "Get started by creating your first product." %}
+                    </p>
+                    <a href="{% url 'accounts:product-create' organization_pk=organization.pk %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-1"></i> {% trans "Create Your First Product" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

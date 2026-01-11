@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block organization_content %}
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            {% trans "Delete Organization" %}
+        </h4>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <h5 class="alert-heading">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {% trans "Warning: This action cannot be undone!" %}
+            </h5>
+            <p class="mb-0">
+                {% trans "You are about to permanently delete the organization" %} <strong>"{{ object.name }}"</strong>. 
+                {% trans "All associated data, including feedback, analytics, and team members will be permanently removed." %}
+            </p>
+        </div>
+
+        <div class="mb-4">
+            <h6>{% trans "This will delete:" %}</h6>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {% trans "Organization profile and settings" %}
+                    <span class="badge bg-danger rounded-pill">{% trans "Permanent" %}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {% trans "All team members and their access" %}
+                    <span class="badge bg-danger rounded-pill">{{ object.members.count }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {% trans "All customer feedback data" %}
+                    <span class="badge bg-danger rounded-pill">{% trans "All Data" %}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {% trans "All analytics and reports" %}
+                    <span class="badge bg-danger rounded-pill">{% trans "All Data" %}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {% trans "All action plans and strategic insights" %}
+                    <span class="badge bg-danger rounded-pill">{% trans "All Data" %}</span>
+                </li>
+            </ul>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="confirm_name" class="form-label fw-bold">
+                    {% trans "To confirm deletion, type the organization name below:" %}
+                </label>
+                <input type="text" class="form-control form-control-lg" id="confirm_name" 
+                       placeholder="{% trans 'Enter organization name exactly as shown' %}" 
+                       oninput="toggleDeleteButton()">
+                <div class="form-text text-danger">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {% trans "You must type the organization name exactly to proceed" %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'organizations:detail' object.slug %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    {% trans "Cancel, Keep Organization" %}
+                </a>
+                <button type="submit" id="deleteButton" class="btn btn-danger btn-lg" disabled>
+                    <i class="bi bi-trash me-2"></i>
+                    {% trans "Permanently Delete Organization" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleDeleteButton() {
+    const confirmInput = document.getElementById('confirm_name');
+    const deleteButton = document.getElementById('deleteButton');
+    const organizationName = "{{ object.name }}";
+    
+    if (confirmInput.value === organizationName) {
+        deleteButton.disabled = false;
+        confirmInput.classList.remove('is-invalid');
+        confirmInput.classList.add('is-valid');
+    } else {
+        deleteButton.disabled = true;
+        confirmInput.classList.remove('is-valid');
+        if (confirmInput.value) {
+            confirmInput.classList.add('is-invalid');
+        } else {
+            confirmInput.classList.remove('is-invalid');
+        }
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleDeleteButton();
+});
+</script>
+{% endblock %}

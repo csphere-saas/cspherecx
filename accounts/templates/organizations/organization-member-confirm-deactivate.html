@@ -1,0 +1,427 @@
+<!-- templates/organizations/organization-member-confirm-deactivate.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Deactivate Member" %} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-list' %}">{% trans "Organizations" %}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{{ organization.name }}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:org-member-list' pk=organization.pk %}">{% trans "Members" %}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "Deactivate Member" %}</li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10 p-4 mb-3">
+                        <i class="fas fa-user-slash fa-2x text-danger"></i>
+                    </div>
+                </div>
+                <h1 class="h3 mb-2">{% trans "Deactivate Team Member" %}</h1>
+                <p class="text-muted mb-0">
+                    {% trans "You are about to deactivate a member from" %} <strong>{{ organization.name }}</strong>
+                </p>
+            </div>
+
+            <!-- Warning Card -->
+            <div class="card border-danger mb-4">
+                <div class="card-header bg-danger bg-opacity-10 border-danger">
+                    <h5 class="mb-0 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "Warning: Action Required" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-exclamation-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading mb-2">{% trans "This action cannot be undone" %}</h6>
+                                <p class="mb-2">{% trans "The member will lose access to the organization immediately." %}</p>
+                                <p class="mb-0">{% trans "Their data will be preserved and they can be reactivated later." %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Member Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        {% trans "Member Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Member Avatar -->
+                        <div class="col-auto mb-3 mb-sm-0">
+                            <div class="avatar-lg rounded-circle bg-light d-flex align-items-center justify-content-center border">
+                                {% if member.user.first_name %}
+                                <span class="fs-2 fw-bold text-primary">
+                                    {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                                </span>
+                                {% else %}
+                                <span class="fs-2 fw-bold text-primary">
+                                    {{ member.user.email|first|upper }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Member Details -->
+                        <div class="col">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Name" %}</label>
+                                        <p class="mb-0 fw-medium">
+                                            {% if member.user.first_name or member.user.last_name %}
+                                                {{ member.user.first_name }} {{ member.user.last_name }}
+                                            {% else %}
+                                                {% trans "Not specified" %}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Email" %}</label>
+                                        <p class="mb-0 fw-medium">{{ member.user.email }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Role" %}</label>
+                                        <div>
+                                            <span class="badge {% if member.role == 'owner' %}bg-primary{% elif member.role == 'admin' %}bg-info{% elif member.role == 'manager' %}bg-success{% elif member.role == 'analyst' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ member.get_role_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted mb-1">{% trans "Joined" %}</label>
+                                        <p class="mb-0 fw-medium">{{ member.created_at|date:"M d, Y" }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <div class="mb-0">
+                                        <label class="form-label small text-muted mb-1">{% trans "Status" %}</label>
+                                        <div>
+                                            {% if member.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                {% trans "Active" %}
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>
+                                                {% trans "Inactive" %}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impact Analysis -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        {% trans "What Happens Next" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-danger">
+                                    <i class="fas fa-ban fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Immediate Access Loss" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "Member will immediately lose access to all organization data and features." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-warning">
+                                    <i class="fas fa-lock fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Preserved Data" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "All their previous actions and data will be preserved for audit purposes." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-info">
+                                    <i class="fas fa-redo fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Reactivation Possible" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "They can be reactivated later with the same role and permissions." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-success">
+                                    <i class="fas fa-history fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{% trans "No Data Deletion" %}</h6>
+                                    <p class="small text-muted mb-0">
+                                        {% trans "No data will be deleted. Their contributions remain in the system." %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Confirmation Checkbox -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmDeactivate" required>
+                                <label class="form-check-label fw-medium" for="confirmDeactivate">
+                                    {% trans "I understand that this action will revoke access for" %} 
+                                    <strong>{{ member.user.email }}</strong> 
+                                    {% trans "from" %} <strong>{{ organization.name }}</strong>.
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Reason for Deactivation (Optional) -->
+                        <div class="mb-4">
+                            <label for="reason" class="form-label">
+                                {% trans "Reason for deactivation (optional)" %}
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="reason" 
+                                name="reason" 
+                                rows="3" 
+                                placeholder="{% trans "Briefly explain why you are deactivating this member..." %}"
+                            ></textarea>
+                            <div class="form-text">
+                                {% trans "This will be recorded in the audit log for future reference." %}
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'accounts:org-member-list' pk=organization.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-danger" id="deactivateBtn" disabled>
+                                    <i class="fas fa-user-slash me-2"></i>
+                                    {% trans "Deactivate Member" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        {% trans "Need Help?" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6>{% trans "When should I deactivate a member?" %}</h6>
+                            <p class="small text-muted mb-0">
+                                {% trans "When they leave the team, change roles, or no longer need access. This is safer than deleting their account." %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>{% trans "Can I reactivate them later?" %}</h6>
+                            <p class="small text-muted mb-0">
+                                {% trans "Yes! Deactivated members can be reactivated at any time. Their data and permissions will be restored." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-lg {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .bg-opacity-10 {
+        opacity: 0.1;
+    }
+    
+    .card {
+        border-radius: 10px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .form-check-input:checked {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .form-check-input:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+    
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .btn-danger:hover {
+        background-color: #bb2d3b;
+        border-color: #b02a37;
+    }
+    
+    .btn-danger:disabled {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        opacity: 0.65;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+        padding: 0.35em 0.65em;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheckbox = document.getElementById('confirmDeactivate');
+        const deactivateBtn = document.getElementById('deactivateBtn');
+        const reasonTextarea = document.getElementById('reason');
+        const form = document.querySelector('form');
+        
+        // Enable/disable deactivate button based on checkbox
+        if (confirmCheckbox && deactivateBtn) {
+            confirmCheckbox.addEventListener('change', function() {
+                deactivateBtn.disabled = !this.checked;
+            });
+            
+            // Add confirmation dialog on submit
+            form.addEventListener('submit', function(e) {
+                if (!confirmCheckbox.checked) {
+                    e.preventDefault();
+                    alert('{% trans "Please confirm that you understand the consequences by checking the box." %}');
+                    return false;
+                }
+                
+                // Show final confirmation
+                const memberEmail = "{{ member.user.email }}";
+                const organizationName = "{{ organization.name }}";
+                const confirmationMessage = `{% trans "Are you sure you want to deactivate" %} ${memberEmail} {% trans "from" %} ${organizationName}?`;
+                
+                if (!confirm(confirmationMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Show loading state
+                deactivateBtn.disabled = true;
+                deactivateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> {% trans "Deactivating..." %}';
+            });
+        }
+        
+        // Add character counter for reason textarea
+        if (reasonTextarea) {
+            const charCount = document.createElement('div');
+            charCount.className = 'form-text text-end mt-1';
+            charCount.innerHTML = '<span id="charCount">0</span>/500 {% trans "characters" %}';
+            reasonTextarea.parentNode.appendChild(charCount);
+            
+            reasonTextarea.addEventListener('input', function() {
+                const count = this.value.length;
+                document.getElementById('charCount').textContent = count;
+                
+                if (count > 500) {
+                    this.classList.add('is-invalid');
+                    charCount.classList.add('text-danger');
+                } else {
+                    this.classList.remove('is-invalid');
+                    charCount.classList.remove('text-danger');
+                }
+            });
+        }
+        
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', function(e) {
+            if (confirmCheckbox && confirmCheckbox.checked && form && !form.submitted) {
+                const confirmationMessage = '{% trans "You have unsaved changes. Are you sure you want to leave?" %}';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+        
+        // Remove beforeunload when form is submitted
+        form.addEventListener('submit', function() {
+            window.removeEventListener('beforeunload');
+        });
+    });
+</script>
+{% endblock %}
