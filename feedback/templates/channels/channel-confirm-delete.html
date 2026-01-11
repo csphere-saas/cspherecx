@@ -1,0 +1,63 @@
+<!-- channels/channel_confirm_delete.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Delete Channel" %} - {{ channel.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{% trans "Delete Channel" %}</h4>
+                            <p class="mb-0 opacity-75">{{ organization.name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4 text-center">
+                    <div class="mb-4">
+                        <div class="bg-primary rounded p-4 mx-auto mb-3" style="width: 80px;">
+                            <i class="bi bi-megaphone text-white fs-2"></i>
+                        </div>
+                        <h5 class="mb-2">{{ channel.name }}</h5>
+                        <p class="text-muted">{{ channel.get_channel_type_display }}</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>{% trans "Warning:" %}</strong>
+                        {% trans "This action cannot be undone. All channel configuration and associated data will be permanently deleted." %}
+                    </div>
+
+                    {% if channel.is_enabled %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {% trans "This channel is currently enabled. Consider disabling it first if you want to temporarily stop collecting feedback." %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'feedback:channel-detail' organization.pk channel.pk %}" 
+                               class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="bi bi-trash me-2"></i>
+                                {% trans "Delete Channel" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

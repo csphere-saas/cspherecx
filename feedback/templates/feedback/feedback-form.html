@@ -1,0 +1,494 @@
+<!-- templates/feedback/feedback-form.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ page_title|default:"Create Feedback" }}{% endblock %}
+
+{% block content %}
+<section class="py-5"> <p></p><br>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Header -->
+            <div class="card mb-4">
+                <div class="card-header {% if editing %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas {% if editing %}fa-edit{% else %}fa-comment-medical{% endif %} me-2"></i>
+                            {{ page_title|default:"Create New Feedback" }}
+                        </h4>
+                        {% if organization %}
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-building me-1"></i>
+                            {{ organization.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if organization %}
+                    <div class="alert {% if editing %}alert-warning{% else %}alert-info{% endif %}">
+                        <i class="fas {% if editing %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+                        {% if editing %}
+                            {% trans "You are editing feedback for" %} 
+                        {% else %}
+                            {% trans "This feedback will be associated with" %}
+                        {% endif %}
+                        <strong>{{ organization.name }}</strong>
+                    </div>
+                    {% endif %}
+                    
+                    {% if editing %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-history me-2"></i>
+                        {% trans "Feedback ID:" %} <strong>{{ form.instance.feedback_id }}</strong>
+                        {% if form.instance.created_at %}
+                        | {% trans "Created:" %} {{ form.instance.created_at|date:"M d, Y H:i" }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Feedback Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="feedbackForm" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if editing %}
+                        <input type="hidden" name="editing" value="true">
+                        {% endif %}
+                        
+                        <!-- Display form errors -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Customer Information Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user me-2"></i>
+                                    {% trans "Customer Information" %}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.customer.id_for_label }}" class="form-label">
+                                            {% trans "Existing Customer" %}
+                                            <small class="text-muted">{% trans "(Optional)" %}</small>
+                                        </label>
+                                        {{ form.customer }}
+                                        {% if form.customer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.customer.errors }}
+                                        </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Select an existing customer or provide email below" %}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.customer_email.id_for_label }}" class="form-label">
+                                            {% trans "Customer Email" %}
+                                            <small class="text-muted">{% trans "(For new customers)" %}</small>
+                                        </label>
+                                        {{ form.customer_email }}
+                                        {% if form.customer_email.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.customer_email.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.customer_first_name.id_for_label }}" class="form-label">
+                                            {% trans "First Name" %}
+                                        </label>
+                                        {{ form.customer_first_name }}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.customer_last_name.id_for_label }}" class="form-label">
+                                            {% trans "Last Name" %}
+                                        </label>
+                                        {{ form.customer_last_name }}
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-warning mt-3">
+                                    <small>
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        {% trans "Leave customer fields blank to create anonymous feedback." %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Feedback Details Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>
+                                    {% trans "Feedback Details" %}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.channel.id_for_label }}" class="form-label">
+                                            {% trans "Channel" %} *
+                                        </label>
+                                        {{ form.channel }}
+                                        {% if form.channel.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.channel.errors }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.product.id_for_label }}" class="form-label">
+                                            {% trans "Related Product" %}
+                                        </label>
+                                        {{ form.product }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.subject.id_for_label }}" class="form-label">
+                                        {% trans "Subject" %} *
+                                    </label>
+                                    {{ form.subject }}
+                                    {% if form.subject.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.subject.errors }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        {% trans "Brief summary of the feedback" %}
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.content.id_for_label }}" class="form-label">
+                                        {% trans "Content" %} *
+                                    </label>
+                                    {{ form.content }}
+                                    {% if form.content.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.content.errors }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        {% trans "Detailed feedback or complaint" %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Classification Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-tags me-2"></i>
+                                    {% trans "Classification" %}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label for="{{ form.origin.id_for_label }}" class="form-label">
+                                            {% trans "Feedback Origin" %}
+                                        </label>
+                                        {{ form.origin }}
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="{{ form.feedback_type.id_for_label }}" class="form-label">
+                                            {% trans "Feedback Type" %}
+                                        </label>
+                                        {{ form.feedback_type }}
+                                    </div>
+                                    
+                                    <div class="col-md-3 mb-3">
+                                        <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                            {% trans "Priority" %}
+                                        </label>
+                                        {{ form.priority }}
+                                    </div>
+                                    
+                                    <div class="col-md-3 mb-3">
+                                        <label for="{{ form.status.id_for_label }}" class="form-label">
+                                            {% trans "Status" %}
+                                        </label>
+                                        {{ form.status }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Fixed Tags Section -->
+                                <div class="mb-3">
+                                    <label class="form-label">{% trans "Tags" %}</label>
+                                    <div class="form-check-group">
+                                        {% if form.tags.field.queryset.exists %}
+                                            {% for choice in form.tags %}
+                                            <div class="form-check form-check-inline">
+                                                {{ choice.tag }}
+                                                <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                                    {{ choice.choice_label }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                {% trans "No tags available for this organization." %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% if form.tags.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.tags.errors }}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        {% trans "Select relevant tags for categorization" %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% if organization %}{% url 'feedback:feedback-list' organization_pk=organization.pk %}{% else %}{% url 'dashboard' %}{% endif %}"
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            
+                            <div>
+                                {% if editing %}
+                                <a href="{% if organization %}{% url 'feedback:feedback-detail' organization_pk=organization.pk pk=form.instance.pk %}{% endif %}"
+                                   class="btn btn-outline-info me-2">
+                                    <i class="fas fa-eye me-2"></i>
+                                    {% trans "View Details" %}
+                                </a>
+                                {% endif %}
+                                
+                                <button type="submit" name="save" class="btn {% if editing %}btn-warning{% else %}btn-primary{% endif %}">
+                                    <i class="fas {% if editing %}fa-save{% else %}fa-check{% endif %} me-2"></i>
+                                    {{ submit_text|default:"Save Feedback" }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar with Stats -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas {% if editing %}fa-history{% else %}fa-chart-bar{% endif %} me-2"></i>
+                        {% if editing %}{% trans "Update Info" %}{% else %}{% trans "Quick Stats" %}{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if organization %}
+                    <div class="mb-4">
+                        <h6 class="text-muted">{% trans "Organization" %}</h6>
+                        <div class="d-flex align-items-center">
+                            {% if organization.logo %}
+                            <img src="{{ organization.logo.url }}" alt="{{ organization.name }}" 
+                                 class="rounded-circle me-3" width="40" height="40">
+                            {% endif %}
+                            <div>
+                                <strong>{{ organization.name }}</strong><br>
+                                <small class="text-muted">{{ organization.get_industry_display }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted">
+                            {% if editing %}{% trans "Current Feedback" %}{% else %}{% trans "Customer Stats" %}{% endif %}
+                        </h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h4 class="mb-0">{{ total_customers }}</h4>
+                                    <small>{% trans "Total Customers" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h4 class="mb-0">{{ organization.monthly_feedback_limit }}</h4>
+                                    <small>{% trans "Monthly Limit" %}</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if editing and form.instance %}
+                        <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
+                            <h6 class="text-muted">{% trans "Current Status" %}</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>{% trans "Priority:" %}</span>
+                                <span class="badge bg-{{ form.instance.priority }}">
+                                    {{ form.instance.get_priority_display }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>{% trans "Status:" %}</span>
+                                <span class="badge bg-{{ form.instance.status }}">
+                                    {{ form.instance.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>{% trans "Type:" %}</span>
+                                <span>{{ form.instance.get_feedback_type_display }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted">{% trans "Recent Feedback" %}</h6>
+                        <div class="list-group list-group-flush">
+                            {% for fb in recent_feedback|slice:":3" %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <small class="text-truncate">{{ fb.subject|truncatechars:30 }}</small>
+                                    <small class="text-muted">{{ fb.created_at|date:"M d" }}</small>
+                                </div>
+                                <small class="text-muted d-block">
+                                    <span class="badge bg-{{ fb.priority }}">
+                                        {{ fb.get_priority_display }}
+                                    </span>
+                                    <span class="badge bg-secondary ms-1">
+                                        {{ fb.get_status_display }}
+                                    </span>
+                                </small>
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p class="mb-0">{% trans "No recent feedback" %}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% if editing %}
+                                {% trans "Changes will be logged and may trigger notifications." %}
+                            {% else %}
+                                {% trans "Feedback will be analyzed by AI for sentiment and themes." %}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    // Handle customer selection logic
+    $('#id_customer').change(function() {
+        if ($(this).val()) {
+            // If existing customer selected, clear new customer fields
+            $('#id_customer_email, #id_customer_first_name, #id_customer_last_name').val('');
+            
+            // Optionally, fetch and populate customer details via AJAX
+            fetchCustomerDetails($(this).val());
+        }
+    });
+    
+    $('#id_customer_email').on('input', function() {
+        if ($(this).val()) {
+            // If email entered, clear existing customer selection
+            $('#id_customer').val('');
+        }
+    });
+    
+    // Function to fetch customer details via AJAX
+    function fetchCustomerDetails(customerId) {
+        if (!customerId) return;
+        
+        $.ajax({
+            url: '{% url "feedback:customer-details-ajax" %}',
+            data: {
+                'customer_id': customerId,
+                'organization_pk': '{{ organization.pk }}'
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    $('#id_customer_email').val(data.email || '');
+                    $('#id_customer_first_name').val(data.first_name || '');
+                    $('#id_customer_last_name').val(data.last_name || '');
+                }
+            },
+            error: function() {
+                console.log('Error fetching customer details');
+            }
+        });
+    }
+    
+    // If editing and customer is selected, fetch details
+    {% if editing and form.instance.customer %}
+    $('#id_customer').trigger('change');
+    {% endif %}
+    
+    // Form validation and loading state
+    $('#feedbackForm').submit(function(e) {
+        // Basic validation
+        const subject = $('#id_subject').val().trim();
+        const content = $('#id_content').val().trim();
+        const channel = $('#id_channel').val();
+        
+        let errors = [];
+        
+        if (!subject) {
+            errors.push('{% trans "Subject is required" %}');
+        }
+        
+        if (!content) {
+            errors.push('{% trans "Content is required" %}');
+        }
+        
+        if (!channel) {
+            errors.push('{% trans "Channel is required" %}');
+        }
+        
+        if (errors.length > 0) {
+            e.preventDefault();
+            alert(errors.join('\n'));
+            return false;
+        }
+        
+        // Add loading state
+        $('button[type="submit"]').prop('disabled', true).html(
+            '<i class="fas fa-spinner fa-spin me-2"></i>{% if editing %}Updating...{% else %}Processing...{% endif %}'
+        );
+    });
+});
+</script>
+{% endblock %}

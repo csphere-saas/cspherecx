@@ -1,0 +1,194 @@
+<!-- tags/tag_detail.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ tag.name }} - {% trans "Tag Details" %}{% endblock %}
+
+{% block content %}
+<section class="py-2">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:tag-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Tags" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ tag.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Tag Header -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <span class="badge me-4" style="background-color: {{ tag.color }}; color: white; min-width: 80px; height: 60px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            <i class="bi bi-tag-fill me-2"></i>
+                            {{ tag.name }}
+                        </span>
+                        <div>
+                            <h1 class="h3 mb-1">{{ tag.name }}</h1>
+                            <div class="d-flex align-items-center flex-wrap">
+                                <span class="badge 
+                                    {% if tag.category == 'issue' %}bg-primary
+                                    {% elif tag.category == 'priority' %}bg-danger
+                                    {% elif tag.category == 'department' %}bg-success
+                                    {% elif tag.category == 'feature' %}bg-info
+                                    {% else %}bg-secondary{% endif %} me-2 mb-1">
+                                    {{ tag.get_category_display }}
+                                </span>
+                                <code class="bg-light px-2 py-1 rounded me-3 mb-1">{{ tag.slug }}</code>
+                                <small class="text-muted mb-1">
+                                    {% trans "Created" %} {{ tag.created_at|date:"F j, Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group">
+                        <a href="{% url 'feedback:tag-update' organization.pk tag.pk %}" 
+                           class="btn btn-outline-primary me-2">
+                            <i class="bi bi-pencil me-2"></i>{% trans "Edit" %}
+                        </a>
+                        <a href="{% url 'feedback:tag-delete' organization.pk tag.pk %}" 
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-2"></i>{% trans "Delete" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Tag Details -->
+        <div class="col-lg-8">
+            <!-- Description -->
+            {% if tag.description %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-card-text text-primary me-2"></i>
+                        {% trans "Description" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ tag.description|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Usage Statistics -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up text-primary me-2"></i>
+                        {% trans "Usage Statistics" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-primary fw-bold">{{ customer_count }}</h3>
+                                <p class="text-muted mb-0">{% trans "Tagged Customers" %}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-success fw-bold">{{ feedback_count }}</h3>
+                                <p class="text-muted mb-0">{% trans "Tagged Feedback Items" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Tag Information -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i>
+                        {% trans "Tag Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" width="40%">{% trans "Name" %}</th>
+                                <td>{{ tag.name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Slug" %}</th>
+                                <td><code>{{ tag.slug }}</code></td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Category" %}</th>
+                                <td>
+                                    <span class="badge 
+                                        {% if tag.category == 'issue' %}bg-primary
+                                        {% elif tag.category == 'priority' %}bg-danger
+                                        {% elif tag.category == 'department' %}bg-success
+                                        {% elif tag.category == 'feature' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ tag.get_category_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Color" %}</th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="color-swatch me-2" style="background-color: {{ tag.color }}; width: 20px; height: 20px; border-radius: 3px; border: 1px solid #dee2e6;"></div>
+                                        <code class="small">{{ tag.color }}</code>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Created" %}</th>
+                                <td>{{ tag.created_at|date:"M j, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Last Updated" %}</th>
+                                <td>{{ tag.updated_at|date:"M j, Y" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning text-primary me-2"></i>
+                        {% trans "Quick Actions" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'feedback:tag-update' organization.pk tag.pk %}" class="btn btn-outline-primary w-100 text-start">
+                            <i class="bi bi-pencil me-2"></i>
+                            {% trans "Edit Tag" %}
+                        </a>
+                        <a href="{% url 'feedback:tag-delete' organization.pk tag.pk %}" class="btn btn-outline-danger w-100 text-start">
+                            <i class="bi bi-trash me-2"></i>
+                            {% trans "Delete Tag" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}

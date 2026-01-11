@@ -1,0 +1,309 @@
+<!-- feedback/feedback_import.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-2">
+    <p></p><br> 
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:feedback-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Feedback" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-upload me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{{ page_title }}</h4>
+                            <p class="mb-0 opacity-75">{{ organization.name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Import Errors -->
+                    {% if request.session.import_errors %}
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            {% trans "Import Completed with Errors" %}
+                        </h6>
+                        <p class="mb-2">{% trans "The following errors occurred during import:" %}</p>
+                        <ul class="mb-0 small">
+                            {% for error in request.session.import_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" novalidate id="import-form">
+                        {% csrf_token %}
+                        
+                        <!-- Non-field Errors -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- File Upload -->
+                                <div class="mb-4">
+                                    <label for="{{ form.file.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.file.label }} *
+                                    </label>
+                                    {{ form.file }}
+                                    {% if form.file.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.file.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {{ form.file.help_text }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Channel Selection -->
+                                <div class="mb-4">
+                                    <label for="{{ form.channel.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.channel.label }} *
+                                    </label>
+                                    {{ form.channel }}
+                                    {% if form.channel.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.channel.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CSV Format Guide -->
+                        <div class="card border-info mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    {% trans "CSV Format Requirements" %}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-info">{% trans "Required Columns" %}</h6>
+                                        <ul class="small mb-3">
+                                            <li><code>customer_email</code> - {% trans "Customer's email address" %}</li>
+                                            <li><code>content</code> - {% trans "Feedback content" %}</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-info">{% trans "Optional Columns" %}</h6>
+                                        <ul class="small mb-0">
+                                            <li><code>first_name</code> - {% trans "Customer first name" %}</li>
+                                            <li><code>last_name</code> - {% trans "Customer last name" %}</li>
+                                            <li><code>subject</code> - {% trans "Feedback subject" %}</li>
+                                            <li><code>feedback_type</code> - {% trans "complaint, suggestion, compliment, etc." %}</li>
+                                            <li><code>priority</code> - {% trans "low, medium, high, critical" %}</li>
+                                            <li><code>status</code> - {% trans "new, in_progress, resolved, etc." %}</li>
+                                            <li><code>language</code> - {% trans "en, es, fr, etc." %}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <h6 class="text-info">{% trans "Example CSV" %}</h6>
+                                    <pre class="bg-light p-3 rounded small"><code>customer_email,first_name,last_name,subject,content,feedback_type,priority,status
+customer1@example.com,John,Doe,Great product!,"I love the new features you've added.",compliment,low,resolved
+customer2@example.com,Jane,Smith,Bug report,"The login page is not working on mobile.",bug_report,high,new
+customer3@example.com,,,Feature request,"Please add dark mode to the app.",feature_request,medium,new</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Import Options -->
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">{% trans "Import Behavior" %}</h6>
+                            <ul class="mb-0 small">
+                                <li>{% trans "New customers will be automatically created if they don't exist" %}</li>
+                                <li>{% trans "Feedback IDs will be automatically generated" %}</li>
+                                <li>{% trans "The first row should contain column headers" %}</li>
+                                <li>{% trans "Files should be UTF-8 encoded" %}</li>
+                                <li>{% trans "Maximum file size: 10MB" %}</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-4">
+                            <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <div class="btn-group">
+                                <a href="#" class="btn btn-outline-info" id="download-template">
+                                    <i class="bi bi-download me-2"></i>
+                                    {% trans "Download Template" %}
+                                </a>
+                                <button type="submit" class="btn btn-primary px-4" id="submit-btn">
+                                    <i class="bi bi-upload me-2"></i>
+                                    {% trans "Start Import" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('import-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const downloadTemplateBtn = document.getElementById('download-template');
+    const fileInput = document.getElementById('{{ form.file.id_for_label }}');
+
+    // Form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Basic validation
+            const requiredFields = form.querySelectorAll('[required]');
+            let hasErrors = false;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    if (!hasErrors) {
+                        field.focus();
+                    }
+                    hasErrors = true;
+                }
+            });
+
+            // Validate file type
+            if (fileInput && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const fileName = file.name.toLowerCase();
+                
+                if (!fileName.endsWith('.csv')) {
+                    fileInput.classList.add('is-invalid');
+                    if (!hasErrors) {
+                        fileInput.focus();
+                    }
+                    hasErrors = true;
+                }
+            }
+
+            if (hasErrors) {
+                e.preventDefault();
+            } else {
+                // Disable submit button to prevent double submission
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Importing..." %}';
+                }
+            }
+        });
+    }
+
+    // Download template
+    if (downloadTemplateBtn) {
+        downloadTemplateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Create CSV template content
+            const templateContent = `customer_email,first_name,last_name,subject,content,feedback_type,priority,status,language
+customer1@example.com,John,Doe,Great product!,"I love the new features you've added.",compliment,low,resolved,en
+customer2@example.com,Jane,Smith,Bug report,"The login page is not working on mobile.",bug_report,high,new,en
+customer3@example.com,,,Feature request,"Please add dark mode to the app.",feature_request,medium,new,en`;
+
+            // Create and trigger download
+            const blob = new Blob([templateContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'feedback_import_template.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        });
+    }
+
+    // Real-time validation
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const fileName = file.name.toLowerCase();
+                
+                if (fileName.endsWith('.csv')) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.add('is-invalid');
+                    this.classList.remove('is-valid');
+                }
+            } else {
+                this.classList.remove('is-invalid', 'is-valid');
+            }
+        });
+    }
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .is-valid {
+        border-color: #198754 !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

@@ -1,0 +1,379 @@
+<!-- feedback/feedback_form.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:feedback-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Feedback" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-chat-text me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{{ page_title }}</h4>
+                            <p class="mb-0 opacity-75">{{ organization.name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate id="feedback-form">
+                        {% csrf_token %}
+                        
+                        <!-- Non-field Errors -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-primary border-bottom pb-2">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    {% trans "Basic Information" %}
+                                </h5>
+                                
+                                <!-- Customer -->
+                                <div class="mb-3">
+                                    <label for="{{ form.customer.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.customer.label }} *
+                                    </label>
+                                    {{ form.customer }}
+                                    {% if form.customer.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.customer.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Channel -->
+                                <div class="mb-3">
+                                    <label for="{{ form.channel.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.channel.label }}
+                                    </label>
+                                    {{ form.channel }}
+                                    {% if form.channel.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.channel.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Product -->
+                                <div class="mb-3">
+                                    <label for="{{ form.product.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.product.label }}
+                                    </label>
+                                    {{ form.product }}
+                                    {% if form.product.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.product.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Subject -->
+                                <div class="mb-3">
+                                    <label for="{{ form.subject.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.subject.label }}
+                                    </label>
+                                    {{ form.subject }}
+                                    {% if form.subject.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.subject.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Classification -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-primary border-bottom pb-2">
+                                    <i class="bi bi-tags me-2"></i>
+                                    {% trans "Classification" %}
+                                </h5>
+                                
+                                <!-- Feedback Type -->
+                                <div class="mb-3">
+                                    <label for="{{ form.feedback_type.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.feedback_type.label }} *
+                                    </label>
+                                    {{ form.feedback_type }}
+                                    {% if form.feedback_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.feedback_type.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Priority -->
+                                <div class="mb-3">
+                                    <label for="{{ form.priority.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.priority.label }} *
+                                    </label>
+                                    {{ form.priority }}
+                                    {% if form.priority.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.priority.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Status -->
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.status.label }} *
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.status.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Assigned To -->
+                                <div class="mb-3">
+                                    <label for="{{ form.assigned_to.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.assigned_to.label }}
+                                    </label>
+                                    {{ form.assigned_to }}
+                                    {% if form.assigned_to.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.assigned_to.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="mb-3">
+                                    <label for="{{ form.tags.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.tags.label }}
+                                    </label>
+                                    {{ form.tags }}
+                                    {% if form.tags.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.tags.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="mt-4">
+                            <h5 class="mb-3 text-primary border-bottom pb-2">
+                                <i class="bi bi-chat-left-text me-2"></i>
+                                {% trans "Feedback Content" %}
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.content.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.content.label }} *
+                                </label>
+                                {{ form.content }}
+                                {% if form.content.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    {% for error in form.content.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    {% trans "Enter the detailed customer feedback. This content will be analyzed by AI for sentiment and themes." %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <!-- Internal Notes -->
+                                <div class="mb-3">
+                                    <label for="{{ form.internal_notes.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.internal_notes.label }}
+                                    </label>
+                                    {{ form.internal_notes }}
+                                    {% if form.internal_notes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.internal_notes.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% trans "Internal notes for team members (not visible to customers)" %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Metadata -->
+                                <div class="mb-3">
+                                    <label for="{{ form.metadata.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.metadata.label }}
+                                    </label>
+                                    {{ form.metadata }}
+                                    {% if form.metadata.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.metadata.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% trans "Additional metadata in JSON format" %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-4">
+                            <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4" id="submit-btn">
+                                <i class="bi bi-check-circle me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('feedback-form');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // Form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Basic validation
+            const requiredFields = form.querySelectorAll('[required]');
+            let hasErrors = false;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    if (!hasErrors) {
+                        field.focus();
+                    }
+                    hasErrors = true;
+                }
+            });
+
+            if (hasErrors) {
+                e.preventDefault();
+            } else {
+                // Disable submit button to prevent double submission
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Saving..." %}';
+                }
+            }
+        });
+    }
+
+    // Real-time validation
+    const formFields = form.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    });
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .is-valid {
+        border-color: #198754 !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

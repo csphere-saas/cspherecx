@@ -1,0 +1,186 @@
+<!-- channels/channel_detail.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ channel.name }} - {% trans "Channel Details" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:channel-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Channels" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ channel.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Channel Header -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary rounded p-3 me-4">
+                            <i class="bi bi-megaphone text-white fs-2"></i>
+                        </div>
+                        <div>
+                            <h1 class="h3 mb-1">{{ channel.name }}</h1>
+                            <div class="d-flex align-items-center flex-wrap">
+                                <span class="badge 
+                                    {% if channel.channel_type == 'email' %}bg-primary
+                                    {% elif channel.channel_type == 'phone' %}bg-success
+                                    {% elif channel.channel_type == 'chat' %}bg-info
+                                    {% elif channel.channel_type == 'social_media' %}bg-warning
+                                    {% elif channel.channel_type == 'web_form' %}bg-secondary
+                                    {% else %}bg-dark{% endif %} me-2 mb-1">
+                                    {{ channel.get_channel_type_display }}
+                                </span>
+                                {% if channel.is_enabled %}
+                                <span class="badge bg-success me-2 mb-1">
+                                    <i class="bi bi-check-circle me-1"></i>{% trans "Enabled" %}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary me-2 mb-1">
+                                    <i class="bi bi-x-circle me-1"></i>{% trans "Disabled" %}
+                                </span>
+                                {% endif %}
+                                <small class="text-muted mb-1">
+                                    {% trans "Created" %} {{ channel.created_at|date:"F j, Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group">
+                        <form method="post" action="{% url 'feedback:channel-toggle' organization.pk channel.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-{% if channel.is_enabled %}warning{% else %}success{% endif %} me-2">
+                                <i class="bi bi-{% if channel.is_enabled %}pause{% else %}play{% endif %}-circle me-2"></i>
+                                {% if channel.is_enabled %}{% trans "Disable" %}{% else %}{% trans "Enable" %}{% endif %}
+                            </button>
+                        </form>
+                        <a href="{% url 'feedback:channel-update' organization.pk channel.pk %}" 
+                           class="btn btn-outline-primary me-2">
+                            <i class="bi bi-pencil me-2"></i>{% trans "Edit" %}
+                        </a>
+                        <a href="{% url 'feedback:channel-delete' organization.pk channel.pk %}" 
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-2"></i>{% trans "Delete" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Channel Details -->
+        <div class="col-lg-8">
+            <!-- Description -->
+            {% if channel.description %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-card-text text-primary me-2"></i>
+                        {% trans "Description" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ channel.description|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Configuration -->
+            {% if channel.configuration %}
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-code-slash text-primary me-2"></i>
+                        {% trans "Configuration" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded"><code>{{ configuration_formatted }}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Channel Information -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-primary me-2"></i>
+                        {% trans "Channel Information" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" width="40%">{% trans "Type" %}</th>
+                                <td>{{ channel.get_channel_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Status" %}</th>
+                                <td>
+                                    {% if channel.is_enabled %}
+                                    <span class="badge bg-success">{% trans "Enabled" %}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{% trans "Disabled" %}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Created" %}</th>
+                                <td>{{ channel.created_at|date:"M j, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">{% trans "Last Updated" %}</th>
+                                <td>{{ channel.updated_at|date:"M j, Y" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning text-primary me-2"></i>
+                        {% trans "Quick Actions" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <form method="post" action="{% url 'feedback:channel-toggle' organization.pk channel.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-{% if channel.is_enabled %}warning{% else %}success{% endif %} w-100 text-start">
+                                <i class="bi bi-{% if channel.is_enabled %}pause{% else %}play{% endif %}-circle me-2"></i>
+                                {% if channel.is_enabled %}{% trans "Disable Channel" %}{% else %}{% trans "Enable Channel" %}{% endif %}
+                            </button>
+                        </form>
+                        <a href="{% url 'feedback:channel-update' organization.pk channel.pk %}" class="btn btn-outline-primary w-100 text-start">
+                            <i class="bi bi-pencil me-2"></i>
+                            {% trans "Edit Channel" %}
+                        </a>
+                        <a href="{% url 'feedback:channel-delete' organization.pk channel.pk %}" class="btn btn-outline-danger w-100 text-start">
+                            <i class="bi bi-trash me-2"></i>
+                            {% trans "Delete Channel" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+<!-- channels/channel_list.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ page_title }}</h1>
+            <p class="text-muted mb-0">
+                {% blocktrans count counter=total_channels %}
+                {{ total_channels }} channel configured
+                {% plural %}
+                {{ total_channels }} channels configured
+                {% endblocktrans %}
+                ({{ enabled_channels }} {% trans "enabled" %})
+            </p>
+        </div>
+        <a href="{% url 'feedback:channel-create' organization.pk %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>
+            {% trans "Add Channel" %}
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        {% for stat in type_stats %}
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-light h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-primary fw-bold mb-1">{{ stat.count }}</h4>
+                    <small class="text-muted">{{ stat.channel_type|title }} {% trans "Channels" %}</small>
+                    <div class="mt-1">
+                        <span class="badge bg-success">{{ stat.enabled_count }} {% trans "enabled" %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="{{ filter_form.search.id_for_label }}" class="form-label">
+                        {% trans "Search" %}
+                    </label>
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ filter_form.channel_type.id_for_label }}" class="form-label">
+                        {% trans "Channel Type" %}
+                    </label>
+                    {{ filter_form.channel_type }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ filter_form.status.id_for_label }}" class="form-label">
+                        {% trans "Status" %}
+                    </label>
+                    {{ filter_form.status }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel me-2"></i>{% trans "Filter" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Channels Grid -->
+    {% if channels %}
+    <div class="row">
+        {% for channel in channels %}
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title mb-1">{{ channel.name }}</h5>
+                            <span class="badge 
+                                {% if channel.channel_type == 'email' %}bg-primary
+                                {% elif channel.channel_type == 'phone' %}bg-success
+                                {% elif channel.channel_type == 'chat' %}bg-info
+                                {% elif channel.channel_type == 'social_media' %}bg-warning
+                                {% elif channel.channel_type == 'web_form' %}bg-secondary
+                                {% else %}bg-dark{% endif %}">
+                                {{ channel.get_channel_type_display }}
+                            </span>
+                        </div>
+                        <div class="form-check form-switch">
+                            <form method="post" action="{% url 'feedback:channel-toggle' organization.pk channel.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <input class="form-check-input" type="checkbox" 
+                                       {% if channel.is_enabled %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if channel.description %}
+                    <p class="card-text text-muted">{{ channel.description|truncatewords:20 }}</p>
+                    {% else %}
+                    <p class="card-text text-muted font-italic">{% trans "No description provided" %}</p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            {% trans "Created" %} {{ channel.created_at|date:"M j, Y" }}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'feedback:channel-detail' organization.pk channel.pk %}" 
+                               class="btn btn-outline-primary" 
+                               title="{% trans 'View Details' %}">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'feedback:channel-update' organization.pk channel.pk %}" 
+                               class="btn btn-outline-secondary"
+                               title="{% trans 'Edit' %}">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'feedback:channel-delete' organization.pk channel.pk %}" 
+                               class="btn btn-outline-danger"
+                               title="{% trans 'Delete' %}">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-megaphone display-1 text-muted"></i>
+            <h5 class="text-muted mt-3">{% trans "No channels configured" %}</h5>
+            <p class="text-muted mb-4">{% trans "Start collecting customer feedback by setting up your first channel." %}</p>
+            <a href="{% url 'feedback:channel-create' organization.pk %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>
+                {% trans "Add Your First Channel" %}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Channel pagination">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Previous" %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Next" %}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+</section>
+{% endblock %}

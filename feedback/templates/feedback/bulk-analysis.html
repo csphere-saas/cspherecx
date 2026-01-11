@@ -1,0 +1,220 @@
+<!-- feedback/bulk_analysis.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-2">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:feedback-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Feedback" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-robot me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{{ page_title }}</h4>
+                            <p class="mb-0 opacity-75">
+                                {% blocktrans count counter=total_selected %}
+                                {{ total_selected }} feedback item selected
+                                {% plural %}
+                                {{ total_selected }} feedback items selected
+                                {% endblocktrans %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Selected Feedbacks Preview -->
+                    {% if selected_feedbacks %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">{% trans "Selected Feedback Items" %}</h5>
+                        <div class="table-responsive" style="max-height: 300px;">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "ID" %}</th>
+                                        <th>{% trans "Subject" %}</th>
+                                        <th>{% trans "Customer" %}</th>
+                                        <th>{% trans "AI Status" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for feedback in selected_feedbacks %}
+                                    <tr>
+                                        <td class="small">{{ feedback.feedback_id }}</td>
+                                        <td class="small">{{ feedback.subject|truncatewords:5|default:"-" }}</td>
+                                        <td class="small">{{ feedback.customer.email }}</td>
+                                        <td>
+                                            {% if feedback.ai_analyzed %}
+                                            <span class="badge bg-success">{% trans "Analyzed" %}</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">{% trans "Not Analyzed" %}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Form -->
+                    <form method="post" id="bulk-analysis-form">
+                        {% csrf_token %}
+                        
+                        <input type="hidden" name="feedback_ids" value="{{ selected_feedbacks|join:',' }}">
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "Analysis Options" %}</h5>
+                            
+                            <!-- Analysis Type -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">{% trans "Analysis Type" %} *</label>
+                                <div class="row">
+                                    {% for choice in form.analysis_type %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            {{ choice.tag }}
+                                            <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                                {{ choice.choice_label }}
+                                            </label>
+                                        </div>
+                                        {% if forloop.first %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Detect positive/negative sentiment" %}
+                                        </small>
+                                        {% elif forloop.counter == 2 %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Identify common themes and topics" %}
+                                        </small>
+                                        {% elif forloop.counter == 3 %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Generate summary of key points" %}
+                                        </small>
+                                        {% else %}
+                                        <small class="form-text text-muted">
+                                            {% trans "Complete analysis including sentiment, themes, and summary" %}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.analysis_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    {% for error in form.analysis_type.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Overwrite Option -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    {{ form.overwrite_existing }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.overwrite_existing.id_for_label }}">
+                                        {{ form.overwrite_existing.label }}
+                                    </label>
+                                </div>
+                                {% if form.overwrite_existing.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    {% for error in form.overwrite_existing.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    {% trans "If unchecked, only feedback items that haven't been analyzed will be processed." %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Preview -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">{% trans "What to Expect" %}</h6>
+                            <ul class="mb-0">
+                                <li>{% trans "Analysis may take several minutes depending on the number of items" %}</li>
+                                <li>{% trans "You'll receive a notification when analysis is complete" %}</li>
+                                <li>{% trans "Results will be available in the feedback details and analysis dashboard" %}</li>
+                                <li>{% trans "Some items may require human review after AI analysis" %}</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-4">
+                            <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4" id="start-analysis-btn">
+                                <i class="bi bi-robot me-2"></i>
+                                {% trans "Start Bulk Analysis" %}
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <!-- No Items Selected -->
+                    <div class="text-center py-4">
+                        <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                        <h5 class="text-warning mt-3">{% trans "No Feedback Items Selected" %}</h5>
+                        <p class="text-muted mb-4">{% trans "Please go back and select feedback items to analyze." %}</p>
+                        <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            {% trans "Back to Feedback List" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('bulk-analysis-form');
+    const startBtn = document.getElementById('start-analysis-btn');
+
+    if (form && startBtn) {
+        form.addEventListener('submit', function(e) {
+            // Show loading state
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Starting Analysis..." %}';
+        });
+    }
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

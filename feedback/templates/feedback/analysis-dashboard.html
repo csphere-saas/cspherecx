@@ -1,0 +1,442 @@
+<!-- feedback/analysis_dashboard.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-2">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:feedback-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Feedback" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ page_title }}</h1>
+            <p class="text-muted mb-0">{% trans "AI-powered insights and analytics for customer feedback" %}</p>
+        </div>
+        <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>
+            {% trans "Back to Feedback" %}
+        </a>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Total Feedback" %}</h6>
+                            <h3 class="fw-bold text-primary">{{ total_feedbacks }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-chat-text text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "AI Analyzed" %}</h6>
+                            <h3 class="fw-bold text-success">{{ analyzed_feedbacks }}</h3>
+                            <span class="badge bg-success">{{ analysis_percentage|floatformat:1 }}%</span>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-robot text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Needs Review" %}</h6>
+                            <h3 class="fw-bold text-warning">{{ needs_review }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-eye text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">{% trans "Coverage" %}</h6>
+                            <h3 class="fw-bold text-info">{{ analysis_percentage|floatformat:1 }}%</h3>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ analysis_percentage }}%;"></div>
+                            </div>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-graph-up text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sentiment Analysis -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-emoji-smile text-primary me-2"></i>
+                        {% trans "Sentiment Analysis" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if sentiment_data %}
+                    <div class="chart-container mb-4" style="height: 200px;">
+                        <!-- Sentiment chart would go here -->
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-light rounded">
+                            <div class="text-center text-muted">
+                                <i class="bi bi-pie-chart display-4 d-block mb-2"></i>
+                                <p>{% trans "Sentiment distribution chart" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sentiment-breakdown">
+                        {% for item in sentiment_data %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="badge 
+                                    {% if item.sentiment_label == 'very_negative' %}bg-danger
+                                    {% elif item.sentiment_label == 'negative' %}bg-warning
+                                    {% elif item.sentiment_label == 'neutral' %}bg-secondary
+                                    {% elif item.sentiment_label == 'positive' %}bg-info
+                                    {% else %}bg-success{% endif %} me-2">
+                                    {{ item.sentiment_label|title }}
+                                </span>
+                                <small class="text-muted">{{ item.count }} {% trans "items" %}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ item.percentage|floatformat:1 }}%</small>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar 
+                                {% if item.sentiment_label == 'very_negative' %}bg-danger
+                                {% elif item.sentiment_label == 'negative' %}bg-warning
+                                {% elif item.sentiment_label == 'neutral' %}bg-secondary
+                                {% elif item.sentiment_label == 'positive' %}bg-info
+                                {% else %}bg-success{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ item.percentage }}%;">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-emoji-neutral display-4 text-muted"></i>
+                        <p class="text-muted mt-3">{% trans "No sentiment data available" %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Type Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-tags text-primary me-2"></i>
+                        {% trans "Feedback Types" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if type_data %}
+                    <div class="type-distribution">
+                        {% for item in type_data %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="badge 
+                                    {% if item.feedback_type == 'complaint' %}bg-danger
+                                    {% elif item.feedback_type == 'suggestion' %}bg-info
+                                    {% elif item.feedback_type == 'compliment' %}bg-success
+                                    {% elif item.feedback_type == 'question' %}bg-primary
+                                    {% elif item.feedback_type == 'bug_report' %}bg-warning
+                                    {% elif item.feedback_type == 'feature_request' %}bg-purple
+                                    {% else %}bg-secondary{% endif %} me-2">
+                                    {{ item.feedback_type|title }}
+                                </span>
+                                <small class="text-muted">{{ item.count }} {% trans "items" %}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ item.percentage|floatformat:1 }}%</small>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar 
+                                {% if item.feedback_type == 'complaint' %}bg-danger
+                                {% elif item.feedback_type == 'suggestion' %}bg-info
+                                {% elif item.feedback_type == 'compliment' %}bg-success
+                                {% elif item.feedback_type == 'question' %}bg-primary
+                                {% elif item.feedback_type == 'bug_report' %}bg-warning
+                                {% elif item.feedback_type == 'feature_request' %}bg-purple
+                                {% else %}bg-secondary{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ item.percentage }}%;">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-tags display-4 text-muted"></i>
+                        <p class="text-muted mt-3">{% trans "No feedback type data available" %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-primary me-2"></i>
+                        {% trans "Priority Levels" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if priority_data %}
+                    <div class="priority-distribution">
+                        {% for item in priority_data %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="badge 
+                                    {% if item.priority == 'critical' %}bg-danger
+                                    {% elif item.priority == 'high' %}bg-warning
+                                    {% elif item.priority == 'medium' %}bg-info
+                                    {% else %}bg-secondary{% endif %} me-2">
+                                    {{ item.priority|title }}
+                                </span>
+                                <small class="text-muted">{{ item.count }} {% trans "items" %}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ item.percentage|floatformat:1 }}%</small>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar 
+                                {% if item.priority == 'critical' %}bg-danger
+                                {% elif item.priority == 'high' %}bg-warning
+                                {% elif item.priority == 'medium' %}bg-info
+                                {% else %}bg-secondary{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ item.percentage }}%;">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-flag display-4 text-muted"></i>
+                        <p class="text-muted mt-3">{% trans "No priority data available" %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analysis Insights -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-robot text-primary me-2"></i>
+                        {% trans "AI Analysis Insights" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="insights-list">
+                        <div class="insight-item mb-3 p-3 border rounded">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-lightbulb text-warning me-3 fs-5"></i>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Analysis Coverage" %}</h6>
+                                    <p class="mb-0 small text-muted">
+                                        {% blocktrans with percentage=analysis_percentage|floatformat:1 %}
+                                        {{ percentage }}% of feedback has been analyzed by AI
+                                        {% endblocktrans %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-item mb-3 p-3 border rounded">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-eye text-info me-3 fs-5"></i>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Human Review Needed" %}</h6>
+                                    <p class="mb-0 small text-muted">
+                                        {% blocktrans count counter=needs_review %}
+                                        {{ needs_review }} item requires human verification
+                                        {% plural %}
+                                        {{ needs_review }} items require human verification
+                                        {% endblocktrans %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-item p-3 border rounded">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-graph-up text-success me-3 fs-5"></i>
+                                <div>
+                                    <h6 class="mb-1">{% trans "Analysis Trends" %}</h6>
+                                    <p class="mb-0 small text-muted">
+                                        {% trans "Most feedback is processed within 24 hours of submission" %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="row mt-4">
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 bg-primary bg-opacity-10 h-100">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-robot display-4 text-primary mb-3"></i>
+                    <h5 class="text-primary">{% trans "Bulk Analysis" %}</h5>
+                    <p class="text-muted mb-3">{% trans "Analyze multiple feedback items at once" %}</p>
+                    <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-primary">
+                        <i class="bi bi-play-circle me-2"></i>
+                        {% trans "Start Analysis" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 bg-success bg-opacity-10 h-100">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-download display-4 text-success mb-3"></i>
+                    <h5 class="text-success">{% trans "Export Reports" %}</h5>
+                    <p class="text-muted mb-3">{% trans "Download analysis reports and insights" %}</p>
+                    <button class="btn btn-success" id="export-reports">
+                        <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                        {% trans "Export Data" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 bg-info bg-opacity-10 h-100">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-graph-up display-4 text-info mb-3"></i>
+                    <h5 class="text-info">{% trans "Advanced Analytics" %}</h5>
+                    <p class="text-muted mb-3">{% trans "Deep dive into feedback patterns and trends" %}</p>
+                    <button class="btn btn-info" id="advanced-analytics">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        {% trans "Explore" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportReportsBtn = document.getElementById('export-reports');
+    const advancedAnalyticsBtn = document.getElementById('advanced-analytics');
+
+    // Export reports functionality
+    if (exportReportsBtn) {
+        exportReportsBtn.addEventListener('click', function() {
+            // Show loading state
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Preparing..." %}';
+            this.disabled = true;
+            
+            // Simulate export process
+            setTimeout(() => {
+                showToast('{% trans "Export started. You will receive an email when it's ready." %}', 'success');
+                this.innerHTML = originalHTML;
+                this.disabled = false;
+            }, 2000);
+        });
+    }
+
+    // Advanced analytics placeholder
+    if (advancedAnalyticsBtn) {
+        advancedAnalyticsBtn.addEventListener('click', function() {
+            showToast('{% trans "Advanced analytics features coming soon!" %}', 'info');
+        });
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

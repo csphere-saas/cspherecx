@@ -1,0 +1,528 @@
+<!-- templates/feedback/feedback-list.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-3">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ page_title }}</h1>
+            <p class="text-muted mb-0">
+                {% if filtered_count == 1 %}
+                {% trans "1 feedback item" %}
+                {% elif filtered_count > 1 %}
+                {% blocktrans with count=filtered_count %}{{ count }} feedback items{% endblocktrans %}
+                {% else %}
+                {% trans "No feedback items" %}
+                {% endif %}
+                {% if has_filters %}
+                <span class="text-muted">({% trans "filtered" %})</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'feedback:feedback-create' organization.pk %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>
+                {% trans "Add Feedback" %}
+            </a>
+            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                <span class="visually-hidden">{% trans "Toggle Dropdown" %}</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="{% url 'feedback:feedback-import' organization.pk %}" class="dropdown-item">
+                        <i class="bi bi-upload me-2"></i>
+                        {% trans "Import CSV" %}
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'feedback:feedback-dashboard' organization.pk %}" class="dropdown-item">
+                        <i class="bi bi-graph-up me-2"></i>
+                        {% trans "Analysis Dashboard" %}
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a href="{% url 'feedback:feedback-list' organization.pk %}" class="dropdown-item">
+                        <i class="bi bi-filter me-2"></i>
+                        {% trans "Clear Filters" %}
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-primary bg-opacity-10 h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-primary fw-bold mb-1">{{ total_feedbacks|default:0 }}</h4>
+                    <small class="text-muted">{% trans "Total" %}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-warning bg-opacity-10 h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-warning fw-bold mb-1">{{ new|default:0 }}</h4>
+                    <small class="text-muted">{% trans "New" %}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-info bg-opacity-10 h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-info fw-bold mb-1">{{ in_progress|default:0 }}</h4>
+                    <small class="text-muted">{% trans "In Progress" %}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-success bg-opacity-10 h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-success fw-bold mb-1">{{ resolved|default:0 }}</h4>
+                    <small class="text-muted">{% trans "Resolved" %}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-secondary bg-opacity-10 h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-secondary fw-bold mb-1">{{ ai_analyzed|default:0 }}</h4>
+                    <small class="text-muted">{% trans "AI Analyzed" %}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-light h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="fw-bold mb-1">
+                        {% if avg_sentiment %}{{ avg_sentiment|floatformat:2 }}{% else %}0.00{% endif %}
+                    </h4>
+                    <small class="text-muted">{% trans "Avg Sentiment" %}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filters Display -->
+    {% if has_filters %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-funnel me-2"></i>
+                <strong>{% trans "Active Filters:" %}</strong>
+                {% for key, value in request.GET.items %}
+                    {% if key != 'page' and value %}
+                    <span class="badge bg-primary ms-2">
+                        {% if key == 'search' %}
+                        {% trans "Search" %}: "{{ value }}"
+                        {% elif key == 'status' %}
+                        {% trans "Status" %}: {{ value }}
+                        {% elif key == 'origin' %}
+                        {% trans "Origin" %}: {{ value }}
+                        {% elif key == 'feedback_type' %}
+                        {% trans "Type" %}: {{ value }}
+                        {% elif key == 'priority' %}
+                        {% trans "Priority" %}: {{ value }}
+                        {% elif key == 'sentiment' %}
+                        {% trans "Sentiment" %}: {{ value }}
+                        {% elif key == 'ai_analyzed' %}
+                            {% if value == 'true' %}{% trans "AI Analyzed" %}{% else %}{% trans "Not Analyzed" %}{% endif %}
+                        {% else %}
+                        {{ key }}: {{ value }}
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-x-circle me-1"></i>{% trans "Clear All" %}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Bulk Actions Bar -->
+    <div class="card shadow-sm border-0 mb-4" id="bulk-actions" style="display: none;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span id="selected-count" class="fw-semibold">0</span>
+                    <span class="text-muted">{% trans "items selected" %}</span>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary" id="bulk-analyze-btn">
+                        <i class="bi bi-robot me-2"></i>
+                        {% trans "AI Analyze" %}
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="bulk-tag-btn">
+                        <i class="bi bi-tags me-2"></i>
+                        {% trans "Add Tags" %}
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="bulk-assign-btn">
+                        <i class="bi bi-person me-2"></i>
+                        {% trans "Assign" %}
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="clear-selection">
+                        <i class="bi bi-x-circle me-2"></i>
+                        {% trans "Clear" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel me-2"></i>
+                {% trans "Filter Feedback" %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3" id="filter-form">
+                <!-- Hidden fields to preserve pagination -->
+                <input type="hidden" name="page" value="1">
+                
+                <div class="col-md-3">
+                    <label for="{{ filter_form.search.id_for_label }}" class="form-label">
+                        <i class="bi bi-search me-1"></i>{% trans "Search" %}
+                    </label>
+                    <div class="input-group">
+                        {{ filter_form.search }}
+                        <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">{% trans "Search in subject, content, customer info" %}</small>
+                </div>
+               
+                <div class="col-md-2">
+                    <label for="{{ filter_form.origin.id_for_label }}" class="form-label">
+                        {% trans "Origin" %}
+                    </label>
+                    {{ filter_form.origin }}
+                </div>
+
+                <div class="col-md-2">
+                    <label for="{{ filter_form.feedback_type.id_for_label }}" class="form-label">
+                        {% trans "Type" %}
+                    </label>
+                    {{ filter_form.feedback_type }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="{{ filter_form.priority.id_for_label }}" class="form-label">
+                        {% trans "Priority" %}
+                    </label>
+                    {{ filter_form.priority }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="{{ filter_form.status.id_for_label }}" class="form-label">
+                        {% trans "Status" %}
+                    </label>
+                    {{ filter_form.status }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="{{ filter_form.date_range.id_for_label }}" class="form-label">
+                        {% trans "Date Range" %}
+                    </label>
+                    {{ filter_form.date_range }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="{{ filter_form.sentiment.id_for_label }}" class="form-label">
+                        {% trans "Sentiment" %}
+                    </label>
+                    {{ filter_form.sentiment }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="{{ filter_form.ai_analyzed.id_for_label }}" class="form-label">
+                        {% trans "AI Analysis" %}
+                    </label>
+                    {{ filter_form.ai_analyzed }}
+                </div>
+                
+                {% if filter_form.assigned_to.field.choices|length > 1 %}
+                <div class="col-md-2">
+                    <label for="{{ filter_form.assigned_to.id_for_label }}" class="form-label">
+                        {% trans "Assigned To" %}
+                    </label>
+                    {{ filter_form.assigned_to }}
+                </div>
+                {% endif %}
+                
+                <!-- Date range inputs (initially hidden) -->
+                <div class="col-md-6" id="custom-date-range" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ filter_form.start_date.id_for_label }}" class="form-label">
+                                {% trans "Start Date" %}
+                            </label>
+                            {{ filter_form.start_date }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ filter_form.end_date.id_for_label }}" class="form-label">
+                                {% trans "End Date" %}
+                            </label>
+                            {{ filter_form.end_date }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-12 mt-3">
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel me-2"></i>{% trans "Apply Filters" %}
+                        </button>
+                        <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i>{% trans "Reset Filters" %}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Feedbacks Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            {% if feedbacks %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="feedback-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" width="30">
+                                <input type="checkbox" class="form-check-input" id="select-all">
+                            </th>
+                            <th>{% trans "Feedback" %}</th>
+                            <th>{% trans "Customer" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Priority" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Sentiment" %}</th>
+                            <th>{% trans "AI" %}</th>
+                            <th>{% trans "Created" %}</th>
+                            <th class="text-end pe-4">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feedback in feedbacks %}
+                        <tr data-feedback-id="{{ feedback.id }}">
+                            <td class="ps-4">
+                                <input type="checkbox" class="form-check-input feedback-checkbox" value="{{ feedback.id }}">
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="fw-semibold">
+                                        <a href="{% url 'feedback:feedback-detail' organization.pk feedback.pk %}" class="text-decoration-none">
+                                            {{ feedback.feedback_id }}
+                                        </a>
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ feedback.subject|truncatewords:8|default:"No subject" }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <div class="fw-semibold">{{ feedback.customer.get_full_name|default:feedback.customer.email|default:"Anonymous" }}</div>
+                                    <div class="text-muted">{{ feedback.customer.email|default:"No email" }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if feedback.feedback_type == 'complaint' %}bg-danger
+                                    {% elif feedback.feedback_type == 'suggestion' %}bg-info
+                                    {% elif feedback.feedback_type == 'compliment' %}bg-success
+                                    {% elif feedback.feedback_type == 'question' %}bg-primary
+                                    {% elif feedback.feedback_type == 'bug_report' %}bg-warning
+                                    {% elif feedback.feedback_type == 'feature_request' %}bg-purple
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ feedback.get_feedback_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if feedback.priority == 'critical' %}bg-danger
+                                    {% elif feedback.priority == 'high' %}bg-warning
+                                    {% elif feedback.priority == 'medium' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ feedback.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if feedback.status == 'new' %}bg-secondary
+                                    {% elif feedback.status == 'in_progress' %}bg-primary
+                                    {% elif feedback.status == 'pending' %}bg-warning
+                                    {% elif feedback.status == 'resolved' %}bg-success
+                                    {% elif feedback.status == 'closed' %}bg-dark
+                                    {% else %}bg-info{% endif %}">
+                                    {{ feedback.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if feedback.sentiment_label %}
+                                <span class="badge 
+                                    {% if feedback.sentiment_label == 'very_negative' %}bg-danger
+                                    {% elif feedback.sentiment_label == 'negative' %}bg-warning
+                                    {% elif feedback.sentiment_label == 'neutral' %}bg-secondary
+                                    {% elif feedback.sentiment_label == 'positive' %}bg-info
+                                    {% elif feedback.sentiment_label == 'very_positive' %}bg-success
+                                    {% else %}bg-light text-dark{% endif %}">
+                                    {{ feedback.get_sentiment_label_display|default:feedback.sentiment_label }}
+                                </span>
+                                {% if feedback.sentiment_score %}
+                                <br>
+                                <small class="text-muted">{{ feedback.sentiment_score|floatformat:2 }}</small>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if feedback.ai_analyzed %}
+                                <i class="bi bi-robot text-success" title="{% trans 'AI Analyzed' %}"></i>
+                                {% if feedback.requires_human_review %}
+                                <i class="bi bi-eye text-warning ms-1" title="{% trans 'Needs Review' %}"></i>
+                                {% endif %}
+                                {% else %}
+                                <i class="bi bi-robot text-muted" title="{% trans 'Not Analyzed' %}"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ feedback.created_at|date:"M j, Y" }}</small>
+                                <br>
+                                <small class="text-muted">{{ feedback.created_at|time:"H:i" }}</small>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'feedback:feedback-detail' organization.pk feedback.pk %}" 
+                                       class="btn btn-outline-primary" 
+                                       title="{% trans 'View Details' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'feedback:feedback-update' organization.pk feedback.pk %}" 
+                                       class="btn btn-outline-secondary"
+                                       title="{% trans 'Edit' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% if not feedback.ai_analyzed %}
+                                    <button class="btn btn-outline-info analyze-single" 
+                                            data-feedback-id="{{ feedback.id }}"
+                                            title="{% trans 'AI Analyze' %}">
+                                        <i class="bi bi-robot"></i>
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-outline-success analyze-single" 
+                                            data-feedback-id="{{ feedback.id }}"
+                                            title="{% trans 'Re-analyze' %}">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-chat-text display-1 text-muted"></i>
+                <h5 class="text-muted mt-3">
+                    {% if has_filters %}
+                    {% trans "No feedback matches your filters" %}
+                    {% else %}
+                    {% trans "No feedback found" %}
+                    {% endif %}
+                </h5>
+                <p class="text-muted mb-4">
+                    {% if has_filters %}
+                    {% trans "Try adjusting your filters or clear them to see all feedback." %}
+                    {% else %}
+                    {% trans "Start collecting customer feedback to see it here." %}
+                    {% endif %}
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url 'feedback:feedback-create' organization.pk %}" class="btn btn-primary me-2">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        {% trans "Add Feedback" %}
+                    </a>
+                    <a href="{% url 'feedback:feedback-import' organization.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-upload me-2"></i>
+                        {% trans "Import CSV" %}
+                    </a>
+                    {% if has_filters %}
+                    <a href="{% url 'feedback:feedback-list' organization.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>
+                        {% trans "Clear Filters" %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="text-muted">
+            {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}
+            Showing {{ start }} to {{ end }} of {{ total }} entries
+            {% endblocktrans %}
+        </div>
+        <nav aria-label="Feedback pagination">
+            <ul class="pagination mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Previous" %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Next" %}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+</section>
+{% endblock %}

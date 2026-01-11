@@ -1,0 +1,404 @@
+<!-- tags/tag_form.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'feedback:tag-list' organization.pk %}" class="text-decoration-none">
+                    {% trans "Tags" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-tag me-3 fs-4"></i>
+                        <div>
+                            <h4 class="mb-0">{{ page_title }}</h4>
+                            <p class="mb-0 opacity-75">{{ organization.name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate id="tag-form">
+                        {% csrf_token %}
+                        
+                        <!-- Non-field Errors -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-primary border-bottom pb-2">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    {% trans "Basic Information" %}
+                                </h5>
+                                
+                                <!-- Name -->
+                                <div class="mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.name.label }} *
+                                    </label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.name.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% trans "A descriptive name for this tag" %}
+                                    </div>
+                                </div>
+
+                                <!-- Slug -->
+                                <div class="mb-3">
+                                    <label for="{{ form.slug.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.slug.label }} *
+                                    </label>
+                                    {{ form.slug }}
+                                    {% if form.slug.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.slug.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% trans "URL-friendly version of the name (auto-generated if left blank)" %}
+                                    </div>
+                                </div>
+
+                                <!-- Category -->
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.category.label }} *
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.category.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Visual Information -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3 text-primary border-bottom pb-2">
+                                    <i class="bi bi-palette me-2"></i>
+                                    {% trans "Visual Settings" %}
+                                </h5>
+                                
+                                <!-- Color -->
+                                <div class="mb-3">
+                                    <label for="{{ form.color.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.color.label }} *
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.color }}
+                                        <span class="input-group-text">
+                                            <i class="bi bi-eyedropper"></i>
+                                        </span>
+                                    </div>
+                                    {% if form.color.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        {% for error in form.color.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% trans "Choose a color for this tag" %}
+                                    </div>
+                                </div>
+
+                                <!-- Color Preview -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{% trans "Preview" %}</label>
+                                    <div class="border rounded p-3 bg-light">
+                                        <div class="d-flex align-items-center">
+                                            <span id="color-preview" class="badge me-3" style="background-color: {{ form.color.value|default:'#000000' }}; color: white; min-width: 80px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-tag-fill me-2"></i>
+                                                <span id="preview-name">{{ form.name.value|default:"Tag Name" }}</span>
+                                            </span>
+                                            <small class="text-muted">{% trans "This is how your tag will appear" %}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mt-4">
+                            <h5 class="mb-3 text-primary border-bottom pb-2">
+                                <i class="bi bi-card-text me-2"></i>
+                                {% trans "Description" %}
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.description.label }}
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    {% for error in form.description.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    {% trans "Optional description explaining how this tag should be used" %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Guide -->
+                        <div class="alert alert-info mt-4">
+                            <h6 class="alert-heading">{% trans "Tag Categories Guide" %}</h6>
+                            <div class="row small">
+                                <div class="col-md-6">
+                                    <strong class="text-primary">{% trans "Issue Type" %}</strong>
+                                    <p class="mb-1 text-muted">{% trans "For categorizing types of issues or feedback" %}</p>
+                                    <span class="badge bg-primary">bug</span>
+                                    <span class="badge bg-primary ms-1">feature-request</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong class="text-danger">{% trans "Priority" %}</strong>
+                                    <p class="mb-1 text-muted">{% trans "For indicating urgency or importance" %}</p>
+                                    <span class="badge bg-danger">critical</span>
+                                    <span class="badge bg-warning ms-1">high</span>
+                                </div>
+                                <div class="col-md-6 mt-2">
+                                    <strong class="text-success">{% trans "Department" %}</strong>
+                                    <p class="mb-1 text-muted">{% trans "For assigning to teams or departments" %}</p>
+                                    <span class="badge bg-success">support</span>
+                                    <span class="badge bg-success ms-1">sales</span>
+                                </div>
+                                <div class="col-md-6 mt-2">
+                                    <strong class="text-info">{% trans "Feature" %}</strong>
+                                    <p class="mb-1 text-muted">{% trans "For tagging specific product features" %}</p>
+                                    <span class="badge bg-info">mobile-app</span>
+                                    <span class="badge bg-info ms-1">dashboard</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-4">
+                            <a href="{% url 'feedback:tag-list' organization.pk %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4" id="submit-btn">
+                                <i class="bi bi-check-circle me-2"></i>
+                                {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.color-preview {
+    width: 100%;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('tag-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const nameField = document.getElementById('{{ form.name.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    const colorField = document.getElementById('{{ form.color.id_for_label }}');
+    const colorPreview = document.getElementById('color-preview');
+    const previewName = document.getElementById('preview-name');
+
+    // Auto-generate slug from name
+    if (nameField && slugField) {
+        nameField.addEventListener('blur', function() {
+            if (this.value && (!slugField.value || slugField.dataset.autoGenerated)) {
+                fetch('/api/utils/slugify/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ text: this.value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    slugField.value = data.slug;
+                    slugField.dataset.autoGenerated = 'true';
+                    previewName.textContent = this.value;
+                })
+                .catch(error => {
+                    console.error('Error generating slug:', error);
+                    // Fallback: simple slugify
+                    const slug = this.value.toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/(^-|-$)+/g, '');
+                    slugField.value = slug;
+                    slugField.dataset.autoGenerated = 'true';
+                    previewName.textContent = this.value;
+                });
+            }
+        });
+
+        nameField.addEventListener('input', function() {
+            previewName.textContent = this.value || 'Tag Name';
+        });
+    }
+
+    // Update color preview
+    if (colorField && colorPreview) {
+        colorField.addEventListener('input', function() {
+            colorPreview.style.backgroundColor = this.value;
+            
+            // Update text color for better contrast
+            const hex = this.value.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            colorPreview.style.color = brightness > 128 ? 'black' : 'white';
+        });
+    }
+
+    // Form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Basic validation
+            const requiredFields = form.querySelectorAll('[required]');
+            let hasErrors = false;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    if (!hasErrors) {
+                        field.focus();
+                    }
+                    hasErrors = true;
+                }
+            });
+
+            // Validate color format
+            if (colorField && colorField.value && !colorField.value.match(/^#[0-9A-F]{6}$/i)) {
+                colorField.classList.add('is-invalid');
+                if (!hasErrors) {
+                    colorField.focus();
+                }
+                hasErrors = true;
+            }
+
+            if (hasErrors) {
+                e.preventDefault();
+            } else {
+                // Disable submit button to prevent double submission
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> {% trans "Saving..." %}';
+                }
+            }
+        });
+    }
+
+    // Real-time validation
+    const formFields = form.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    });
+
+    // Manual slug editing removes auto-generated flag
+    if (slugField) {
+        slugField.addEventListener('input', function() {
+            delete this.dataset.autoGenerated;
+        });
+    }
+});
+
+// Add spinning animation
+const style = document.createElement('style');
+style.textContent = `
+    .bi-arrow-repeat.spin { 
+        animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .is-valid {
+        border-color: #198754 !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

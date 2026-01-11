@@ -1,0 +1,205 @@
+<!-- tags/tag_list.html -->
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<section class="py-2">
+    <p></p><br>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 ">
+        <div>
+            <h1 class="h3 mb-1">{{ page_title }}</h1>
+            <p class="text-muted mb-0">
+                {% blocktrans count counter=total_tags %}
+                {{ total_tags }} tag configured
+                {% plural %}
+                {{ total_tags }} tags configured
+                {% endblocktrans %}
+            </p>
+        </div>
+        <a href="{% url 'feedback:tag-create' organization.pk %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>
+            {% trans "Create Tag" %}
+        </a>
+    </div>
+
+    <!-- Category Stats -->
+    {% if category_stats %}
+    <div class="row mb-4">
+        {% for stat in category_stats %}
+        <div class="col-xl-2 col-md-4 col-6 mb-3">
+            <div class="card border-0 bg-light h-100">
+                <div class="card-body text-center py-3">
+                    <h4 class="text-primary fw-bold mb-1">{{ stat.count }}</h4>
+                    <small class="text-white">{{ stat.category|title }} {% trans "Tags" %}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Filters Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ filter_form.search.id_for_label }}" class="form-label">
+                        {% trans "Search" %}
+                    </label>
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ filter_form.category.id_for_label }}" class="form-label">
+                        {% trans "Category" %}
+                    </label>
+                    {{ filter_form.category }}
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel me-2"></i>{% trans "Filter" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tags Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            {% if tags %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">{% trans "Tag" %}</th>
+                            <th>{% trans "Slug" %}</th>
+                            <th>{% trans "Category" %}</th>
+                            <th>{% trans "Usage" %}</th>
+                            <th>{% trans "Created" %}</th>
+                            <th class="text-end pe-4">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tag in tags %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge me-3" style="background-color: {{ tag.color }}; color: white; min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-tag-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="fw-semibold">{{ tag.name }}</div>
+                                        {% if tag.description %}
+                                        <small class="text-muted">{{ tag.description|truncatewords:10 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <code class="small">{{ tag.slug }}</code>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if tag.category == 'issue' %}bg-primary
+                                    {% elif tag.category == 'priority' %}bg-danger
+                                    {% elif tag.category == 'department' %}bg-success
+                                    {% elif tag.category == 'feature' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ tag.get_category_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {% blocktrans count counter=tag.customers.count %}
+                                    {{ counter }} customer
+                                    {% plural %}
+                                    {{ counter }} customers
+                                    {% endblocktrans %}
+                                </small>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ tag.created_at|date:"M j, Y" }}</small>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'feedback:tag-detail' organization.pk tag.pk %}" 
+                                       class="btn btn-outline-primary" 
+                                       title="{% trans 'View Details' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'feedback:tag-update' organization.pk tag.pk %}" 
+                                       class="btn btn-outline-secondary"
+                                       title="{% trans 'Edit' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'feedback:tag-delete' organization.pk tag.pk %}" 
+                                       class="btn btn-outline-danger"
+                                       title="{% trans 'Delete' %}">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-tags display-1 text-muted"></i>
+                <h5 class="text-muted mt-3">{% trans "No tags found" %}</h5>
+                <p class="text-muted mb-4">{% trans "Create tags to categorize customers and feedback." %}</p>
+                <a href="{% url 'feedback:tag-create' organization.pk %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    {% trans "Create Your First Tag" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Tag pagination">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Previous" %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {% trans "Next" %}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
